@@ -13,14 +13,14 @@
     <header class="top">
       <div class="left">
         <div class="badge">API • restaurangmetaforen</div>
-        <h1 id="headline">Klicka runt: en sak i taget</h1>
-        <p id="subhead">Välj steg eller tryck på en ruta för att fokusera. Perfekt att skärminspela.</p>
+        <h1 id="headline">Klicka runt: tydliga pulser</h1>
+        <p id="subhead">Välj en ruta → se en puls gå exakt dit den ska. Slå på Presenter Mode om du vill styra pulserna stegvis.</p>
       </div>
 
       <div class="right">
-        <button class="btn primary" id="toggleMode">Interaktiv</button>
-        <button class="btn" id="playDemo">Demo</button>
-        <button class="btn" id="filmMode">Filmläge</button>
+        <button class="btn primary" id="toggleMode" title="Interaktivt eller Fokus">Fokus</button>
+        <button class="btn" id="presenterBtn" title="Klicka för att trigga nästa puls i sekvensen">Presenter</button>
+        <button class="btn" id="filmMode" title="Göm UI för ren inspelning">Filmläge</button>
       </div>
     </header>
 
@@ -31,17 +31,44 @@
 
     <!-- Scene -->
     <section class="scene">
-      <div class="stage">
+      <div class="stage" id="stage">
 
-        <!-- Flow lines -->
-        <svg class="wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <path id="wire1" d="M25,25 C45,25 45,35 50,35" />
-          <path id="wire2" d="M50,35 C60,35 60,25 75,25" />
-          <path id="wire3" d="M50,35 C60,35 60,60 75,62" />
-          <path id="wire4" d="M25,62 C45,62 45,50 50,50" />
+        <!-- Pulse layer (SVG pulses + glow) -->
+        <svg class="pulseLayer" id="pulseLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="1.4" result="blur" />
+              <feColorMatrix in="blur" type="matrix"
+                values="
+                  1 0 0 0 0
+                  0 1 0 0 0
+                  0 0 1 0 0
+                  0 0 0 0.85 0" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Base geometry (same coords across pulses for perfect alignment) -->
+          <!-- guest (left-top) -> api (center) -->
+          <path class="path" id="p-guest-api" d="M20 26 C38 26 44 35 50 35" />
+          <!-- menu (left-bottom) -> api -->
+          <path class="path" id="p-menu-api" d="M20 68 C38 68 44 52 50 52" />
+          <!-- api -> guest -->
+          <path class="path" id="p-api-guest" d="M50 35 C44 35 38 26 20 26" />
+          <!-- api -> server (right-top) -->
+          <path class="path" id="p-api-server" d="M50 35 C58 35 64 26 80 26" />
+          <!-- api -> data (right-bottom) -->
+          <path class="path" id="p-api-data" d="M50 52 C58 52 64 68 80 68" />
+          <!-- server -> api -->
+          <path class="path" id="p-server-api" d="M80 26 C64 26 58 35 50 35" />
+          <!-- data -> api -->
+          <path class="path" id="p-data-api" d="M80 68 C64 68 58 52 50 52" />
         </svg>
 
-        <!-- Barrier -->
+        <!-- Barrier (visual only, toggled for server concept) -->
         <div class="barrier" id="barrier">
           <div class="barline"></div>
           <div class="barlabel">Ingen direktåtkomst</div>
@@ -103,18 +130,6 @@
           <div class="nodeBody">Exakt det du bad om.</div>
         </article>
 
-        <!-- Packet -->
-        <div class="packet" id="packet" aria-hidden="true">
-          <div class="pktLeft">
-            <span class="dot"></span>
-            <div class="pktText">
-              <div class="pktTitle" id="pktTitle">Request</div>
-              <div class="pktSub" id="pktSub">Hämta “hamburgare”</div>
-            </div>
-          </div>
-          <div class="pill" id="pktPill">GET</div>
-        </div>
-
       </div>
     </section>
 
@@ -130,12 +145,12 @@
 
       <div class="caption" id="caption">
         <div class="capTitle" id="capTitle">Översikt</div>
-        <div class="capText" id="capText">Tryck på en ruta eller välj ett steg.</div>
+        <div class="capText" id="capText">Tryck på en ruta. Pulsen visar exakt kommunikationen.</div>
       </div>
 
       <div class="tools">
-        <button class="btn mini" id="sendReq">Skicka request</button>
-        <button class="btn mini" id="sendRes">Skicka response</button>
+        <button class="btn mini" id="pulseOnce">Puls</button>
+        <button class="btn mini" id="nextPulse">Nästa</button>
         <button class="btn mini" id="reset">Reset</button>
       </div>
     </section>

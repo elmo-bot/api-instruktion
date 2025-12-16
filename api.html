@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>API – restaurangmetaforen (Reel)</title>
+  <style>
+    :root{
+      --bg0:#070A14;
+      --bg1:#0B1026;
+      --panel:#0F1735cc;
+      --panel2:#0A1024b8;
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.14);
+      --text:rgba(245,247,255,.92);
+      --muted:rgba(245,247,255,.70);
+      --faint:rgba(245,247,255,.52);
+
+      --a:#7C5CFF;   /* accent */
+      --g:#38D17A;   /* success */
+      --y:#FFCC66;   /* warn */
+      --r:#FF5C7A;   /* danger */
+
+      --shadow: 0 18px 70px rgba(0,0,0,.45);
+      --shadow2: 0 10px 32px rgba(0,0,0,.35);
+      --radius: 26px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 18% 0%, rgba(124,92,255,.20), transparent 60%),
+        radial-gradient(1200px 800px at 88% 8%, rgba(56,209,122,.12), transparent 55%),
+        radial-gradient(900px 700px at 56% 100%, rgba(255,92,122,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      display:grid;
+      place-items:center;
+      padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+    }
+
+    .reel{
+      width:min(440px, 100%);
+      aspect-ratio: 9/16;
+      border-radius: var(--radius);
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Subtle grain */
+    .reel::before{
+      content:"";
+      position:absolute; inset:0;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.06), transparent 35%),
+        radial-gradient(circle at 85% 12%, rgba(255,255,255,.05), transparent 34%),
+        radial-gradient(circle at 55% 88%, rgba(255,255,255,.05), transparent 38%);
+      pointer-events:none;
+      opacity:.65;
+      mix-blend-mode: screen;
+    }
+
+    header{
+      position:relative;
+      padding: 18px 16px 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      z-index:3;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border: 1px solid var(--stroke);
+      background: rgba(15,23,53,.55);
+      border-radius: 999px;
+      font-weight: 750;
+      font-size: 12px;
+      color: var(--muted);
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow2);
+    }
+
+    .title{
+      margin: 10px 0 0;
+      font-size: 19px;
+      line-height:1.12;
+      letter-spacing:-.25px;
+      font-weight: 850;
+    }
+    .subtitle{
+      margin: 7px 0 0;
+      font-size: 12.8px;
+      line-height:1.35;
+      color: var(--muted);
+      max-width: 260px;
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      padding-top:2px;
+    }
+
+    .btn{
+      border:1px solid var(--stroke);
+      background: rgba(15,23,53,.55);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 12.5px;
+      padding: 10px 11px;
+      border-radius: 999px;
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(8px);
+      cursor:pointer;
+      transition: transform .12s ease, filter .12s ease, background .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    .btn.primary{
+      border-color: rgba(124,92,255,.35);
+      background: linear-gradient(180deg, rgba(124,92,255,.92), rgba(124,92,255,.72));
+    }
+
+    /* Scene */
+    .scene{
+      position:absolute;
+      left: 14px; right: 14px;
+      top: 96px;
+      height: 60%;
+      border-radius: 22px;
+      border: 1px solid var(--stroke);
+      background:
+        radial-gradient(900px 280px at 30% 0%, rgba(124,92,255,.16), transparent 70%),
+        radial-gradient(750px 260px at 85% 0%, rgba(56,209,122,.12), transparent 68%),
+        linear-gradient(180deg, rgba(10,16,36,.65), rgba(6,8,18,.52));
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      z-index:1;
+    }
+
+    .stage{
+      position:absolute;
+      inset: 12px;
+      border-radius: 18px;
+      border: 1px dashed rgba(255,255,255,.10);
+      background: rgba(10,16,36,.25);
+      overflow:hidden;
+    }
+
+    .node{
+      position:absolute;
+      width: 46%;
+      padding: 11px 11px 10px;
+      border-radius: 18px;
+      border: 1px solid var(--stroke2);
+      background: rgba(15,23,53,.55);
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(10px);
+    }
+
+    .nodeHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .nodeTitle{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      font-weight: 900;
+      letter-spacing:-.2px;
+      font-size: 13px;
+    }
+    .nodeMeta{
+      margin-top:7px;
+      font-size: 11.7px;
+      line-height:1.3;
+      color: var(--muted);
+    }
+
+    .chip{
+      font-size: 10.5px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(245,247,255,.86);
+      background: rgba(255,255,255,.05);
+      white-space:nowrap;
+    }
+    .chip.a{ border-color: rgba(124,92,255,.28); background: rgba(124,92,255,.12); }
+    .chip.g{ border-color: rgba(56,209,122,.26); background: rgba(56,209,122,.10); }
+    .chip.y{ border-color: rgba(255,204,102,.28); background: rgba(255,204,102,.10); }
+    .chip.r{ border-color: rgba(255,92,122,.28); background: rgba(255,92,122,.10); }
+
+    .guest{ left: 12px; top: 12px; }
+    .menu { left: 12px; top: 46%; }
+    .api  { left: 50%; transform: translateX(-50%); top: 28%; width: 52%; }
+    .server{ right: 12px; top: 12px; }
+    .data { right: 12px; top: 46%; }
+
+    /* Barrier */
+    .barrier{
+      position:absolute;
+      right: 50%;
+      top: 10px;
+      height: calc(100% - 20px);
+      width: 10px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,92,122,0), rgba(255,92,122,.46), rgba(255,92,122,0));
+      box-shadow: 0 0 0 7px rgba(255,92,122,.08);
+      transform: translateX(16px);
+      opacity:.95;
+    }
+    .barrierLabel{
+      position:absolute;
+      right: 50%;
+      top: 10px;
+      transform: translateX(6px);
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(10,16,36,.55);
+      font-size: 11.2px;
+      color: var(--muted);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Request card */
+    .packet{
+      position:absolute;
+      left: 18%;
+      top: 18%;
+      width: 62%;
+      max-width: 250px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(10px);
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      transform: translateX(0);
+      transition: transform .90s cubic-bezier(.18,.92,.25,1);
+    }
+    .packetLeft{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .packetTitle{
+      font-weight: 950;
+      letter-spacing:-.2px;
+      font-size: 13px;
+      white-space:nowrap;
+    }
+    .packetSub{
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top:3px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 165px;
+    }
+    .pill{
+      font-size: 10.5px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(124,92,255,.32);
+      background: rgba(124,92,255,.14);
+      color: rgba(245,247,255,.88);
+      font-weight: 850;
+      white-space:nowrap;
+    }
+
+    .toApi{ transform: translateX(24%); }
+    .toServer{ transform: translateX(48%); }
+    .toGuest{ transform: translateX(0); }
+
+    /* Step text */
+    .bottom{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      padding: 14px 14px 16px;
+      background: linear-gradient(180deg, rgba(7,10,20,0), rgba(7,10,20,.72), rgba(7,10,20,.90));
+      z-index:2;
+    }
+    .stepBox{
+      border-radius: 18px;
+      border: 1px solid var(--stroke);
+      background: rgba(10,16,36,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow2);
+      padding: 12px 13px;
+      font-size: 13.2px;
+      line-height:1.35;
+      color: rgba(245,247,255,.90);
+      min-height: 64px;
+    }
+    .stepBox strong{ color: rgba(245,247,255,.98); }
+
+    /* Countdown overlay */
+    .overlay{
+      position:absolute; inset:0;
+      display:grid;
+      place-items:center;
+      background: radial-gradient(800px 500px at 50% 40%, rgba(124,92,255,.20), transparent 60%),
+                  rgba(7,10,20,.55);
+      backdrop-filter: blur(10px);
+      z-index:4;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease;
+    }
+    .overlay.show{ opacity:1; pointer-events:auto; }
+    .count{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      text-align:center;
+      padding: 18px;
+    }
+    .countNum{
+      font-size: 64px;
+      line-height:1;
+      font-weight: 980;
+      letter-spacing:-1px;
+      text-shadow: 0 18px 50px rgba(0,0,0,.40);
+    }
+    .countText{
+      color: rgba(245,247,255,.82);
+      font-size: 13.5px;
+      max-width: 260px;
+      line-height:1.35;
+    }
+
+    /* Film mode: hide header UI (clean recording) */
+    .film header .actions{ display:none; }
+    .film header .subtitle{ display:none; }
+
+    /* Tiny SVG icons */
+    .ico{ width:18px; height:18px; display:block; }
+    .ico path, .ico circle, .ico rect, .ico line{ vector-effect: non-scaling-stroke; }
+
+    /* Tap hint (first run) */
+    .tapHint{
+      position:absolute;
+      left: 14px; right: 14px;
+      top: 106px;
+      z-index:3;
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+      opacity:1;
+      transition: opacity .25s ease;
+    }
+    .tapHint.hide{ opacity:0; }
+    .tapPill{
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(10,16,36,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow2);
+      color: rgba(245,247,255,.86);
+      font-weight: 850;
+      font-size: 12.5px;
+    }
+    .dotPulse{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(124,92,255,.95);
+      box-shadow: 0 0 0 0 rgba(124,92,255,.35);
+      animation: pulse 1.2s infinite ease-out;
+    }
+    @keyframes pulse{
+      0%{ box-shadow: 0 0 0 0 rgba(124,92,255,.35); }
+      100%{ box-shadow: 0 0 0 14px rgba(124,92,255,0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="reel" id="reel" aria-label="API som restaurang – Reel 9:16">
+    <header>
+      <div>
+        <div class="badge">API – restaurangmetaforen</div>
+        <div class="title">API är servicen som hämtar från “köket”</div>
+        <div class="subtitle">Autostart vid första tryck. Filmläge gömmer UI för ren inspelning.</div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="filmBtn">Filmläge</button>
+        <button class="btn" id="replayBtn">Spela igen</button>
+      </div>
+    </header>
+
+    <div class="tapHint" id="tapHint">
+      <div class="tapPill"><span class="dotPulse"></span> Tryck var som helst för att starta</div>
+    </div>
+
+    <div class="scene">
+      <div class="stage">
+        <!-- Nodes -->
+        <div class="node guest">
+          <div class="nodeHead">
+            <div class="nodeTitle">
+              <!-- Guest icon -->
+              <svg class="ico" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="3.5" stroke="rgba(245,247,255,.88)" stroke-width="1.6"/>
+                <path d="M5.5 20c1.8-4.2 11.2-4.2 13 0" stroke="rgba(245,247,255,.78)" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              Gästen
+            </div>
+            <span class="chip g">Du</span>
+          </div>
+          <div class="nodeMeta">Beställer via appen.</div>
+        </div>
+
+        <div class="node menu">
+          <div class="nodeHead">
+            <div class="nodeTitle">
+              <!-- Menu icon -->
+              <svg class="ico" viewBox="0 0 24 24" fill="none">
+                <rect x="6.5" y="4.8" width="11" height="14.4" rx="2.2" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
+                <line x1="9" y1="9" x2="15.5" y2="9" stroke="rgba(245,247,255,.72)" stroke-width="1.6" stroke-linecap="round"/>
+                <line x1="9" y1="12.5" x2="15.5" y2="12.5" stroke="rgba(245,247,255,.60)" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              Meny
+            </div>
+            <span class="chip a">App</span>
+          </div>
+          <div class="nodeMeta">Här väljer du vad du vill ha.</div>
+        </div>
+
+        <div class="node api">
+          <div class="nodeHead">
+            <div class="nodeTitle">
+              <!-- API/Service icon -->
+              <svg class="ico" viewBox="0 0 24 24" fill="none">
+                <path d="M7 8.8c0-2.3 2.2-4.1 5-4.1s5 1.8 5 4.1" stroke="rgba(245,247,255,.88)" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M6.5 9.6h11" stroke="rgba(245,247,255,.78)" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M8 19.2c.8-3 7.2-3 8 0" stroke="rgba(245,247,255,.72)" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M16.5 14.2h3.2" stroke="rgba(124,92,255,.95)" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              API
+            </div>
+            <span class="chip y">Mellanhand</span>
+          </div>
+          <div class="nodeMeta">Tar förfrågan och pratar med servern.</div>
+        </div>
+
+        <div class="barrier"></div>
+        <div class="barrierLabel">Ingen direkt åtkomst</div>
+
+        <div class="node server">
+          <div class="nodeHead">
+            <div class="nodeTitle">
+              <!-- Server icon -->
+              <svg class="ico" viewBox="0 0 24 24" fill="none">
+                <rect x="6.2" y="5.5" width="11.6" height="5.3" rx="1.6" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
+                <rect x="6.2" y="12.7" width="11.6" height="5.8" rx="1.6" stroke="rgba(245,247,255,.62)" stroke-width="1.6"/>
+                <circle cx="9.2" cy="8.1" r="0.8" fill="rgba(255,204,102,.95)"/>
+                <circle cx="9.2" cy="15.6" r="0.8" fill="rgba(56,209,122,.95)"/>
+              </svg>
+              Server
+            </div>
+            <span class="chip r">Kök</span>
+          </div>
+          <div class="nodeMeta">Här finns datan bakom kulisserna.</div>
+        </div>
+
+        <div class="node data">
+          <div class="nodeHead">
+            <div class="nodeTitle">
+              <!-- Data icon -->
+              <svg class="ico" viewBox="0 0 24 24" fill="none">
+                <path d="M7 8.2c0-1.8 10-1.8 10 0s-10 1.8-10 0Z" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
+                <path d="M7 8.2v7.4c0 1.8 10 1.8 10 0V8.2" stroke="rgba(245,247,255,.62)" stroke-width="1.6"/>
+              </svg>
+              Svar
+            </div>
+            <span class="chip">Data</span>
+          </div>
+          <div class="nodeMeta">Du får bara det du bad om.</div>
+        </div>
+
+        <!-- Packet -->
+        <div class="packet toGuest" id="packet">
+          <div class="packetLeft">
+            <div style="width:10px;height:10px;border-radius:999px;background:rgba(56,209,122,.95);box-shadow:0 0 0 6px rgba(56,209,122,.10)"></div>
+            <div style="min-width:0">
+              <div class="packetTitle" id="packetTitle">Request</div>
+              <div class="packetSub" id="packetSub">Hämta “hamburgare”</div>
+            </div>
+          </div>
+          <div class="pill" id="packetPill">GET</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="stepBox" id="stepBox"><strong>Tryck för att starta.</strong> Då kör vi en snabb 4-stegsresa.</div>
+    </div>
+
+    <div class="overlay" id="overlay" aria-hidden="true">
+      <div class="count">
+        <div class="countNum" id="countNum">3</div>
+        <div class="countText" id="countText">Startar animationen… börja skärminspela nu.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const reel = document.getElementById("reel");
+    const overlay = document.getElementById("overlay");
+    const countNum = document.getElementById("countNum");
+    const packet = document.getElementById("packet");
+    const packetTitle = document.getElementById("packetTitle");
+    const packetSub = document.getElementById("packetSub");
+    const packetPill = document.getElementById("packetPill");
+    const stepBox = document.getElementById("stepBox");
+    const filmBtn = document.getElementById("filmBtn");
+    const replayBtn = document.getElementById("replayBtn");
+    const tapHint = document.getElementById("tapHint");
+
+    let startedOnce = false;
+    let running = false;
+    let timers = [];
+
+    function clearTimers(){ timers.forEach(t => clearTimeout(t)); timers = []; }
+
+    function setPacket(state, title, sub, pill){
+      packet.className = "packet " + state;
+      packetTitle.textContent = title;
+      packetSub.textContent = sub;
+      packetPill.textContent = pill;
+    }
+
+    function reset(){
+      clearTimers();
+      running = false;
+      setPacket("toGuest", "Request", 'Hämta “hamburgare”', "GET");
+      stepBox.innerHTML = "<strong>Tryck för att starta.</strong> Då kör vi en snabb 4-stegsresa.";
+      overlay.classList.remove("show");
+      countNum.textContent = "3";
+    }
+
+    function countdownThenRun(){
+      if(running) return;
+      running = true;
+
+      tapHint.classList.add("hide");
+      overlay.classList.add("show");
+
+      let n = 3;
+      countNum.textContent = n;
+
+      timers.push(setTimeout(()=> { n=2; countNum.textContent = n; }, 800));
+      timers.push(setTimeout(()=> { n=1; countNum.textContent = n; }, 1600));
+      timers.push(setTimeout(()=> {
+        overlay.classList.remove("show");
+        runSequence();
+      }, 2400));
+    }
+
+    function runSequence(){
+      // Step 1
+      setPacket("toGuest", "Request", '”Jag vill ha en hamburgare”', "GET");
+      stepBox.innerHTML = "<strong>Steg 1:</strong> Gästen beställer via appen (menyn).";
+
+      // Step 2: to API
+      timers.push(setTimeout(()=> {
+        setPacket("toApi", "Request", "Skickas till API", "GET");
+        stepBox.innerHTML = "<strong>Steg 2:</strong> API tar emot förfrågan och vet hur man pratar med servern.";
+      }, 950));
+
+      // Step 3: to Server
+      timers.push(setTimeout(()=> {
+        setPacket("toServer", "Request", "API → Server", "GET");
+        stepBox.innerHTML = "<strong>Steg 3:</strong> Servern hämtar det som behövs (”köket”).";
+      }, 2100));
+
+      // Step 4: return (response)
+      timers.push(setTimeout(()=> {
+        setPacket("toApi", "Response", "Här är det du bad om", "200");
+        stepBox.innerHTML = "<strong>Steg 4:</strong> API får svaret och förbereder det för appen.";
+      }, 3200));
+
+      // Back to Guest
+      timers.push(setTimeout(()=> {
+        setPacket("toGuest", "Response", "Levereras till appen", "200");
+        stepBox.innerHTML = "<strong>Kort sagt:</strong> API är mellanhanden som levererar svaret – utan att du går in i ”köket”.";
+      }, 4200));
+
+      // End
+      timers.push(setTimeout(()=> {
+        running = false;
+      }, 5200));
+    }
+
+    // Autostart: första touch/click (iOS-friendly)
+    function firstStart(){
+      if(startedOnce) return;
+      startedOnce = true;
+      countdownThenRun();
+    }
+
+    reel.addEventListener("pointerdown", firstStart, { once: true });
+    reel.addEventListener("click", firstStart, { once: true });
+
+    filmBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      reel.classList.toggle("film");
+    });
+
+    replayBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      reset();
+      // Replay without needing a second “first tap”
+      countdownThenRun();
+    });
+
+    reset();
+  </script>
+</body>
+</html>
+

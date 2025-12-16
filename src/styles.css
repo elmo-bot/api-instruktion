@@ -9,15 +9,22 @@
   --muted: rgba(245,247,255,.70);
   --faint: rgba(245,247,255,.50);
 
-  --a:#7C5CFF;
-  --g:#38D17A;
-  --y:#FFCC66;
-  --r:#FF5C7A;
+  --a:#7C5CFF;   /* accent */
+  --g:#38D17A;   /* success */
+  --y:#FFCC66;   /* warn */
+  --r:#FF5C7A;   /* danger */
 
   --shadow: 0 18px 70px rgba(0,0,0,.48);
   --shadow2: 0 10px 34px rgba(0,0,0,.36);
   --radius: 28px;
+
   --ease: cubic-bezier(.18,.92,.22,1);
+
+  /* Pulse tuning (pro feel) */
+  --pulseDur: 1.28s;
+  --pulseDash: 1 14;
+  --pulseWidth: 1.7;
+  --glowWidth: 3.4;
 }
 
 *{box-sizing:border-box}
@@ -67,7 +74,7 @@ body{
   align-items:flex-start;
   justify-content:space-between;
   gap:12px;
-  z-index:4;
+  z-index:5;
 }
 .badge{
   display:inline-flex;
@@ -77,9 +84,10 @@ body{
   background: rgba(16,24,52,.55);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow2);
-  font-weight: 850;
+  font-weight: 900;
   font-size: 12px;
   color: var(--muted);
+  letter-spacing:.2px;
 }
 h1{
   margin: 10px 0 0;
@@ -92,22 +100,25 @@ p{
   font-size: 12.8px;
   color: var(--muted);
   line-height:1.35;
-  max-width: 290px;
+  max-width: 320px;
 }
 
-.right{ display:flex; gap:8px; align-items:center; padding-top:2px; flex-wrap:wrap; justify-content:flex-end;}
+.right{
+  display:flex; gap:8px; align-items:center;
+  padding-top:2px; flex-wrap:wrap; justify-content:flex-end;
+}
 .btn{
   border:1px solid var(--stroke);
   background: rgba(16,24,52,.55);
   color: var(--text);
-  font-weight: 900;
+  font-weight: 950;
   font-size: 12.5px;
   padding: 10px 11px;
   border-radius: 999px;
   box-shadow: var(--shadow2);
   backdrop-filter: blur(10px);
   cursor:pointer;
-  transition: transform .12s ease, filter .12s ease;
+  transition: transform .12s ease, filter .12s ease, border-color .22s ease;
 }
 .btn:hover{ transform: translateY(-1px); filter: brightness(1.05); }
 .btn.primary{
@@ -115,6 +126,7 @@ p{
   background: linear-gradient(180deg, rgba(124,92,255,.92), rgba(124,92,255,.70));
 }
 .btn.mini{ padding: 10px 10px; font-size: 12px; }
+
 .reel.film .right, .reel.film p { display:none; }
 .reel.film .top{ justify-content:flex-start; }
 
@@ -122,7 +134,7 @@ p{
   position:absolute;
   top: 14px;
   right: 14px;
-  z-index:5;
+  z-index:6;
   display:flex;
   align-items:center;
   gap:10px;
@@ -161,26 +173,64 @@ p{
   overflow:hidden;
 }
 
-/* Wires */
-.wires{
+/* ===== Pulse system (pro) ===== */
+.pulseLayer{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
-  opacity:.9;
   pointer-events:none;
+  z-index:1; /* behind nodes */
+  opacity:.98;
 }
-.wires path{
+.pulseLayer .path{
   fill:none;
-  stroke: rgba(255,255,255,.10);
+  stroke: rgba(245,247,255,.10); /* baseline faint */
   stroke-width: 1.2;
+  stroke-linecap: round;
   stroke-dasharray: 2.5 3.5;
+  opacity:.85;
 }
-.wires .hot{ stroke: rgba(124,92,255,.35); }
-.wires .warm{ stroke: rgba(255,204,102,.35); }
-.wires .ok{ stroke: rgba(56,209,122,.32); }
 
-/* Nodes positioning */
+/* Active pulse paths (we animate stroke-dashoffset + opacity) */
+.pulseLayer .pulseStroke{
+  fill:none;
+  stroke: rgba(124,92,255,.95);
+  stroke-width: var(--pulseWidth);
+  stroke-linecap: round;
+  stroke-dasharray: var(--pulseDash);
+  opacity:0;
+}
+
+.pulseLayer .glowStroke{
+  fill:none;
+  stroke: rgba(124,92,255,.55);
+  stroke-width: var(--glowWidth);
+  stroke-linecap: round;
+  stroke-dasharray: var(--pulseDash);
+  opacity:0;
+  filter: url(#glow);
+}
+
+/* We “clone” the selected path dynamically in JS into two animated strokes */
+@keyframes pulseMove{
+  0%{ stroke-dashoffset: 140; opacity:0; }
+  14%{ opacity:1; }
+  82%{ opacity:1; }
+  100%{ stroke-dashoffset: 0; opacity:0; }
+}
+@keyframes afterGlow{
+  0%{ stroke-dashoffset: 140; opacity:0; }
+  18%{ opacity:.85; }
+  92%{ opacity:.22; }
+  100%{ stroke-dashoffset: 0; opacity:0; }
+}
+
+/* Focus / dim */
+.stage.dim .node{ opacity:.18; filter: blur(.6px); }
+.stage.dim .node.active{ opacity:1; filter:none; }
+
+/* ===== Nodes ===== */
 .node{
   position:absolute;
   width: 46%;
@@ -191,8 +241,9 @@ p{
   box-shadow: var(--shadow2);
   backdrop-filter: blur(12px);
   transform: translateY(10px) scale(.99);
-  opacity: .75;
+  opacity: .82;
   transition: transform .45s var(--ease), opacity .35s ease, filter .35s ease, border-color .35s ease;
+  z-index:3; /* above pulses */
 }
 .node.wide{ width: 52%; left: 50%; transform: translate(-50%, 10px) scale(.99); }
 
@@ -203,7 +254,7 @@ p{
 .node[data-node="data"]{ right: 12px; top: 52%; }
 
 .nodeHead{ display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom: 8px; }
-.nodeTitle{ display:flex; align-items:center; gap:10px; font-weight: 950; font-size: 14px; letter-spacing:-.2px; }
+.nodeTitle{ display:flex; align-items:center; gap:10px; font-weight: 980; font-size: 14px; letter-spacing:-.2px; }
 .nodeBody{ color: var(--muted); font-size: 12.2px; line-height:1.35; }
 
 .tag{
@@ -220,9 +271,8 @@ p{
 .tag.amber{ border-color: rgba(255,204,102,.26); background: rgba(255,204,102,.10); }
 .tag.red{ border-color: rgba(255,92,122,.26); background: rgba(255,92,122,.10); }
 
-/* Focus state */
 .node:focus{ outline:none; }
-.node:hover{ filter: brightness(1.05); opacity: .9; }
+.node:hover{ filter: brightness(1.05); opacity: .95; }
 .node.active{
   opacity: 1;
   filter: none;
@@ -231,16 +281,14 @@ p{
 }
 .node.wide.active{ transform: translate(-50%, 0) scale(1); }
 
-.stage.dim .node{ opacity: .16; filter: blur(1px); }
-.stage.dim .node.active{ opacity:1; filter:none; }
-
 /* Barrier */
 .barrier{
   position:absolute;
   inset: 12px;
   pointer-events:none;
-  opacity:.0;
+  opacity:0;
   transition: opacity .45s ease;
+  z-index:2;
 }
 .barrier.show{ opacity:1; }
 .barline{
@@ -270,68 +318,13 @@ p{
   white-space:nowrap;
 }
 
-/* Packet */
-.packet{
-  position:absolute;
-  left: 16%;
-  top: 40%;
-  width: 68%;
-  max-width: 320px;
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.16);
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-  box-shadow: var(--shadow2);
-  backdrop-filter: blur(12px);
-  padding: 10px 12px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  opacity:0;
-  transform: translateX(0) scale(.99);
-  transition: transform .85s var(--ease), opacity .25s ease;
-  pointer-events:none;
-}
-.packet.show{ opacity:1; }
-.pktLeft{ display:flex; align-items:center; gap:10px; min-width:0; }
-.dot{
-  width:10px;height:10px;border-radius:999px;
-  background: rgba(56,209,122,.95);
-  box-shadow: 0 0 0 6px rgba(56,209,122,.10);
-}
-.pktTitle{ font-weight: 950; font-size: 13px; letter-spacing:-.2px; }
-.pktSub{
-  font-size: 11.5px;
-  color: var(--muted);
-  margin-top:3px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  max-width: 190px;
-}
-.pill{
-  font-size: 10.5px;
-  padding: 6px 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(124,92,255,.32);
-  background: rgba(124,92,255,.14);
-  color: rgba(245,247,255,.88);
-  font-weight: 950;
-  white-space:nowrap;
-}
-
-.packet.pGuest{ transform: translateX(-2%) scale(.99); }
-.packet.pApi{ transform: translateX(10%) scale(1); }
-.packet.pServer{ transform: translateX(22%) scale(1); }
-.packet.pBack{ transform: translateX(6%) scale(1); }
-
 /* Bottom */
 .bottom{
   position:absolute;
   left:0; right:0; bottom:0;
   padding: 14px 14px 16px;
   background: linear-gradient(180deg, rgba(7,10,20,0), rgba(7,10,20,.72), rgba(7,10,20,.92));
-  z-index:3;
+  z-index:4;
 }
 .stepper{
   display:flex;
@@ -346,7 +339,7 @@ p{
   border: 1px solid var(--stroke);
   background: rgba(16,24,52,.55);
   color: rgba(245,247,255,.88);
-  font-weight: 950;
+  font-weight: 980;
   box-shadow: var(--shadow2);
   backdrop-filter: blur(10px);
   cursor:pointer;
@@ -366,7 +359,7 @@ p{
   padding: 12px 13px;
   min-height: 72px;
 }
-.capTitle{ font-weight: 950; font-size: 13.5px; letter-spacing:-.2px; }
+.capTitle{ font-weight: 980; font-size: 13.5px; letter-spacing:-.2px; }
 .capText{ margin-top: 6px; color: var(--muted); font-size: 12.8px; line-height:1.35; }
 
 .tools{
@@ -385,4 +378,3 @@ p{
   background: rgba(255,255,255,.06);
 }
 .icon svg{ width: 16px; height: 16px; }
-

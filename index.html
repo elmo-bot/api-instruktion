@@ -1,112 +1,156 @@
 <!doctype html>
 <html lang="sv">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>API – Interaktiv demo</title>
-  <link rel="stylesheet" href="src/styles.css" />
-</head>
-<body>
-  <main class="app" id="app">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API – enkelt förklarat</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
 
-    <header class="top">
+    <header class="topbar">
       <div class="brand">
-        <img src="assets/loggatransparant.png" alt="Företagslogga" />
-      </div>
-
-      <div class="controls">
-        <select id="scenario" class="select" aria-label="Scenario">
-          <option value="burger">Hamburgare (GET /menu/items/42)</option>
-          <option value="uber">Beställ resa (POST /rides)</option>
-          <option value="login">Bokningar (GET /bookings, auth)</option>
-        </select>
-
-        <button id="prev" class="btn" type="button" aria-label="Föregående">←</button>
-        <button id="next" class="btn primary" type="button">Nästa</button>
+        <img class="logo" src="./assets/loggatransparant.png" alt="Logo" />
+        <div class="brandText">
+          <div class="brandTitle">API – enkelt</div>
+          <div class="brandSub">Se hur en förfrågan går fram och tillbaka</div>
+        </div>
       </div>
     </header>
 
-    <section class="hero">
-      <div class="copy">
-        <div class="kicker">API • interaktiv förklaring</div>
-        <h1 id="title">Välj scenario och tryck Nästa</h1>
-        <p id="desc">En puls i taget visar exakt hur request → response går.</p>
+    <main class="wrap">
+      <section class="hero">
+        <h1>Välj scenario och tryck <span class="pill">Nästa</span></h1>
+        <p class="muted">
+          En puls visar hur <strong>request → response</strong> rör sig.
+          Ingen teknisk jargong — bara kedjan som den känns för användaren.
+        </p>
+      </section>
 
-        <div class="tech">
-          <div class="kv"><span>Method</span><b id="tMethod">—</b></div>
-          <div class="kv"><span>Endpoint</span><b id="tEndpoint">—</b></div>
-          <div class="kv"><span>Status</span><b id="tStatus">—</b></div>
-        </div>
-
-        <div class="progress" aria-label="Progress">
-          <div class="dots" id="dots"></div>
-          <div class="stepText" id="stepText">Steg 1/1</div>
-        </div>
-      </div>
-
-      <div class="scene" aria-label="Scen">
-        <div class="stage" id="stage">
-
-          <!-- All dekor ligger här och får ALDRIG fånga touch -->
-          <svg class="pulseLayer" id="pulseLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="1.2" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-
-            <path class="wire" d="M18 40 C33 40 40 50 50 50" />
-            <path class="wire" d="M50 50 C60 50 67 40 82 40" />
-            <path class="wire" d="M82 40 C86 52 86 66 78 78" />
-            <path class="wire" d="M78 78 C64 84 60 76 52 66" />
-
-            <path class="geom" id="g-app-api"     d="M18 40 C33 40 40 50 50 50" />
-            <path class="geom" id="g-api-server"  d="M50 50 C60 50 67 40 82 40" />
-            <path class="geom" id="g-server-db"   d="M82 40 C86 52 86 66 78 78" />
-            <path class="geom" id="g-db-server"   d="M78 78 C86 66 86 52 82 40" />
-            <path class="geom" id="g-server-api"  d="M82 40 C67 40 60 50 50 50" />
-            <path class="geom" id="g-api-app"     d="M50 50 C40 50 33 40 18 40" />
-          </svg>
-
-          <div class="node appNode" id="n-app">
-            <div class="nodeTitle">App</div>
-            <div class="nodeSub">Gäst + Meny</div>
-          </div>
-
-          <div class="node apiNode" id="n-api">
-            <div class="nodeTitle">API</div>
-            <div class="nodeSub">Mellanhand</div>
-          </div>
-
-          <div class="node serverNode" id="n-server">
-            <div class="nodeTitle">Server</div>
-            <div class="nodeSub">Backend</div>
-          </div>
-
-          <div class="node dbNode" id="n-db">
-            <div class="nodeTitle">Databas</div>
-            <div class="nodeSub">Data</div>
-          </div>
-
-          <div class="response" id="response" aria-hidden="true">
-            <div class="respDot"></div>
-            <div>
-              <div class="respTitle">Svar</div>
-              <div class="respText" id="respText">200 OK</div>
+      <section class="panel">
+        <div class="controls">
+          <div class="controlCard">
+            <div class="controlRow">
+              <label class="label">Scenario</label>
+              <div class="segmented" role="tablist" aria-label="Scenario">
+                <button class="segBtn isActive" data-scenario="get" aria-selected="true">GET</button>
+                <button class="segBtn" data-scenario="post" aria-selected="false">POST</button>
+                <button class="segBtn" data-scenario="put" aria-selected="false">PUT</button>
+                <button class="segBtn" data-scenario="delete" aria-selected="false">DELETE</button>
+              </div>
             </div>
-            <div class="respCode" id="respCode">200</div>
+
+            <div class="kv">
+              <div class="kvRow">
+                <div class="kvKey">Metod</div>
+                <div class="kvVal" id="methodVal">GET</div>
+              </div>
+              <div class="kvRow">
+                <div class="kvKey">Exempel</div>
+                <div class="kvVal" id="endpointVal">/menu/items/42</div>
+              </div>
+              <div class="kvRow">
+                <div class="kvKey">Status</div>
+                <div class="kvVal" id="statusVal">—</div>
+              </div>
+            </div>
+
+            <div class="stepper">
+              <div class="stepDots" id="dots" aria-label="Stegindikator"></div>
+              <div class="stepText">
+                Steg <span id="stepNow">0</span>/<span id="stepTotal">8</span>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn secondary" id="resetBtn" type="button">Återställ</button>
+              <button class="btn" id="nextBtn" type="button">Nästa</button>
+            </div>
           </div>
 
+          <div class="explainCard" aria-live="polite">
+            <div class="explainTitle">Vad händer just nu?</div>
+            <div class="explainBody" id="explainText">
+              Välj ett scenario och tryck Nästa för att starta.
+            </div>
+            <div class="miniLegend">
+              <span class="legendDot request"></span> Request (fråga)
+              <span class="legendDot response"></span> Response (svar)
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
 
-  </main>
+        <div class="vizCard">
+          <div class="vizHeader">
+            <div class="vizTitle">Kedjan</div>
+            <div class="vizSub">App → API → Server → Databas → tillbaka</div>
+          </div>
 
-  <script src="src/app.js"></script>
-</body>
+          <div class="viz" id="viz">
+            <!-- Noder -->
+            <div class="node node-app" id="nodeApp">
+              <div class="nodeTitle">App</div>
+              <div class="nodeSub">Användaren</div>
+            </div>
+
+            <div class="node node-api" id="nodeApi">
+              <div class="nodeTitle">API</div>
+              <div class="nodeSub">Mellanhand</div>
+            </div>
+
+            <div class="node node-server" id="nodeServer">
+              <div class="nodeTitle">Server</div>
+              <div class="nodeSub">Backend</div>
+            </div>
+
+            <div class="node node-db" id="nodeDb">
+              <div class="nodeTitle">Databas</div>
+              <div class="nodeSub">Data</div>
+            </div>
+
+            <!-- Linjer + pulsar -->
+            <svg class="wires" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                  <feMerge>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <!-- APP -> API -->
+              <path id="p1" class="wire" d="M165 140 C 260 140, 300 210, 410 250" />
+              <!-- API -> SERVER -->
+              <path id="p2" class="wire" d="M500 250 C 590 230, 640 170, 720 140" />
+              <!-- SERVER -> DB -->
+              <path id="p3" class="wire" d="M790 165 C 820 270, 720 390, 520 430" />
+              <!-- DB -> API (response väg tillbaka) -->
+              <path id="p4" class="wire" d="M480 430 C 300 400, 280 320, 450 260" />
+              <!-- API -> APP (response tillbaka) -->
+              <path id="p5" class="wire" d="M420 250 C 300 210, 260 140, 165 140" />
+
+              <!-- Pulsar (skapas/aktiveras i JS genom stroke-dashoffset animation) -->
+              <path id="pulseReq1" class="pulse request" d="M165 140 C 260 140, 300 210, 410 250" />
+              <path id="pulseReq2" class="pulse request" d="M500 250 C 590 230, 640 170, 720 140" />
+              <path id="pulseReq3" class="pulse request" d="M790 165 C 820 270, 720 390, 520 430" />
+
+              <path id="pulseRes1" class="pulse response" d="M480 430 C 300 400, 280 320, 450 260" />
+              <path id="pulseRes2" class="pulse response" d="M420 250 C 300 210, 260 140, 165 140" />
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="footNote">
+          Tips: Byt scenario och tryck Nästa igen för att se en ny resa.
+        </div>
+      </footer>
+    </main>
+
+    <script src="./src/app.js"></script>
+  </body>
 </html>

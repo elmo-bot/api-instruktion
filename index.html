@@ -3,79 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>API – restaurangmetaforen</title>
+  <title>API – restaurangmetaforen (Interaktiv)</title>
   <link rel="stylesheet" href="src/styles.css" />
 </head>
 <body>
-  <main class="reel" id="reel" aria-label="Interaktiv API-metafor (9:16)">
+  <main class="reel" id="reel" aria-label="Interaktiv API-metafor i 9:16">
 
-    <!-- Top bar -->
+    <!-- HEADER -->
     <header class="top">
       <div class="left">
         <div class="badge">API • restaurangmetaforen</div>
-        <h1 id="headline">Klicka runt: tydliga pulser</h1>
-        <p id="subhead">Välj en ruta → se en puls gå exakt dit den ska. Slå på Presenter Mode om du vill styra pulserna stegvis.</p>
+        <h1 id="headline">Välj en förfrågan och kör kedjan</h1>
+        <p id="subhead">Tryck på noderna för fokus + puls. Eller välj en förfrågan längst ner för en komplett “request → response”.</p>
       </div>
 
       <div class="right">
-        <button class="btn primary" id="toggleMode" title="Interaktivt eller Fokus">Fokus</button>
-        <button class="btn" id="presenterBtn" title="Klicka för att trigga nästa puls i sekvensen">Presenter</button>
         <button class="btn" id="filmMode" title="Göm UI för ren inspelning">Filmläge</button>
+        <button class="btn primary" id="runBtn" title="Kör vald förfrågan">Kör</button>
       </div>
     </header>
 
-    <!-- Brand -->
+    <!-- LOGGA -->
     <div class="brand" title="Ditt företag">
       <img src="assets/loggatransparant.png" alt="Företagslogga" />
     </div>
 
-    <!-- Scene -->
-    <section class="scene">
+    <!-- SCEN -->
+    <section class="scene" aria-label="Scen">
       <div class="stage" id="stage">
 
-        <!-- Pulse layer (SVG pulses + glow) -->
+        <!-- Pulse layer -->
         <svg class="pulseLayer" id="pulseLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="1.4" result="blur" />
-              <feColorMatrix in="blur" type="matrix"
-                values="
-                  1 0 0 0 0
-                  0 1 0 0 0
-                  0 0 1 0 0
-                  0 0 0 0.85 0" />
+            <filter id="softGlow">
+              <feGaussianBlur stdDeviation="1.2" result="blur" />
               <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
               </feMerge>
             </filter>
           </defs>
 
-          <!-- Base geometry (same coords across pulses for perfect alignment) -->
-          <!-- guest (left-top) -> api (center) -->
-          <path class="path" id="p-guest-api" d="M20 26 C38 26 44 35 50 35" />
-          <!-- menu (left-bottom) -> api -->
-          <path class="path" id="p-menu-api" d="M20 68 C38 68 44 52 50 52" />
-          <!-- api -> guest -->
-          <path class="path" id="p-api-guest" d="M50 35 C44 35 38 26 20 26" />
-          <!-- api -> server (right-top) -->
-          <path class="path" id="p-api-server" d="M50 35 C58 35 64 26 80 26" />
-          <!-- api -> data (right-bottom) -->
-          <path class="path" id="p-api-data" d="M50 52 C58 52 64 68 80 68" />
-          <!-- server -> api -->
-          <path class="path" id="p-server-api" d="M80 26 C64 26 58 35 50 35" />
-          <!-- data -> api -->
-          <path class="path" id="p-data-api" d="M80 68 C64 68 58 52 50 52" />
+          <!-- Baslinjer (svagt) -->
+          <path class="wire" d="M20 26 C38 26 44 38 50 42" />
+          <path class="wire" d="M20 68 C38 68 44 54 50 50" />
+          <path class="wire" d="M50 42 C58 42 64 26 80 26" />
+          <path class="wire" d="M50 50 C58 50 64 68 80 68" />
+
+          <!-- Geometri-paths (osynliga, används som mall för pulser) -->
+          <path class="geom" id="g-guest-api"  d="M20 26 C38 26 44 38 50 42" />
+          <path class="geom" id="g-menu-api"   d="M20 68 C38 68 44 54 50 50" />
+          <path class="geom" id="g-api-server" d="M50 42 C58 42 64 26 80 26" />
+          <path class="geom" id="g-api-data"   d="M50 50 C58 50 64 68 80 68" />
+          <path class="geom" id="g-server-api" d="M80 26 C64 26 58 42 50 42" />
+          <path class="geom" id="g-data-api"   d="M80 68 C64 68 58 50 50 50" />
+          <path class="geom" id="g-api-guest"  d="M50 42 C44 38 38 26 20 26" />
         </svg>
 
-        <!-- Barrier (visual only, toggled for server concept) -->
-        <div class="barrier" id="barrier">
+        <!-- Barrier (för “du går inte in i köket”) -->
+        <div class="barrier" id="barrier" aria-hidden="true">
           <div class="barline"></div>
           <div class="barlabel">Ingen direktåtkomst</div>
         </div>
 
-        <!-- Nodes -->
-        <article class="node" data-node="guest" tabindex="0">
+        <!-- NODES -->
+        <button class="node" data-node="guest" type="button">
           <div class="nodeHead">
             <div class="nodeTitle">
               <span class="icon" data-ico="guest"></span>
@@ -83,21 +75,21 @@
             </div>
             <span class="tag green">Du</span>
           </div>
-          <div class="nodeBody">Du vill ha något.</div>
-        </article>
+          <div class="nodeBody">“Jag vill ha något.”</div>
+        </button>
 
-        <article class="node" data-node="menu" tabindex="0">
+        <button class="node" data-node="menu" type="button">
           <div class="nodeHead">
             <div class="nodeTitle">
               <span class="icon" data-ico="menu"></span>
               Meny
             </div>
-            <span class="tag accent">App</span>
+            <span class="tag accent">App/UI</span>
           </div>
           <div class="nodeBody">Här väljer du.</div>
-        </article>
+        </button>
 
-        <article class="node wide" data-node="api" tabindex="0">
+        <button class="node wide" data-node="api" type="button">
           <div class="nodeHead">
             <div class="nodeTitle">
               <span class="icon" data-ico="api"></span>
@@ -105,10 +97,10 @@
             </div>
             <span class="tag amber">Mellanhand</span>
           </div>
-          <div class="nodeBody">Tar emot och skickar vidare.</div>
-        </article>
+          <div class="nodeBody">Tar emot & skickar vidare.</div>
+        </button>
 
-        <article class="node" data-node="server" tabindex="0">
+        <button class="node" data-node="server" type="button">
           <div class="nodeHead">
             <div class="nodeTitle">
               <span class="icon" data-ico="server"></span>
@@ -117,9 +109,9 @@
             <span class="tag red">Kök</span>
           </div>
           <div class="nodeBody">Här finns datan.</div>
-        </article>
+        </button>
 
-        <article class="node" data-node="data" tabindex="0">
+        <button class="node" data-node="data" type="button">
           <div class="nodeHead">
             <div class="nodeTitle">
               <span class="icon" data-ico="data"></span>
@@ -128,30 +120,39 @@
             <span class="tag">Data</span>
           </div>
           <div class="nodeBody">Exakt det du bad om.</div>
-        </article>
+        </button>
 
       </div>
     </section>
 
-    <!-- Bottom controls -->
-    <section class="bottom">
-      <div class="stepper" role="tablist" aria-label="Steg">
-        <button class="step" data-step="1" role="tab">1</button>
-        <button class="step" data-step="2" role="tab">2</button>
-        <button class="step" data-step="3" role="tab">3</button>
-        <button class="step" data-step="4" role="tab">4</button>
-        <button class="step" data-step="0" role="tab">Översikt</button>
+    <!-- KONTROLLPANEL -->
+    <section class="bottom" aria-label="Kontroller">
+      <div class="panelRow">
+        <div class="selectWrap">
+          <label class="label" for="reqSelect">Förfrågan</label>
+          <select id="reqSelect" class="select">
+            <option value="burger">Metafor: Beställ hamburgare • Tekniskt: GET /menu/items/42</option>
+            <option value="uber">Metafor: Beställ en resa • Tekniskt: POST /rides</option>
+            <option value="login">Metafor: Visa bokning • Tekniskt: GET /bookings (auth)</option>
+          </select>
+        </div>
+
+        <div class="miniBtns">
+          <button class="btn mini" id="pulseBtn" type="button">Puls</button>
+          <button class="btn mini" id="nextBtn" type="button">Nästa steg</button>
+          <button class="btn mini" id="resetBtn" type="button">Reset</button>
+        </div>
       </div>
 
       <div class="caption" id="caption">
-        <div class="capTitle" id="capTitle">Översikt</div>
-        <div class="capText" id="capText">Tryck på en ruta. Pulsen visar exakt kommunikationen.</div>
+        <div class="capTitle" id="capTitle">Redo</div>
+        <div class="capText" id="capText">Välj en förfrågan och tryck “Kör”. Eller tryck på en nod för en snabb puls.</div>
       </div>
 
-      <div class="tools">
-        <button class="btn mini" id="pulseOnce">Puls</button>
-        <button class="btn mini" id="nextPulse">Nästa</button>
-        <button class="btn mini" id="reset">Reset</button>
+      <div class="tech" id="tech">
+        <div class="techRow"><span class="k">Method</span><span class="v" id="tMethod">—</span></div>
+        <div class="techRow"><span class="k">Endpoint</span><span class="v" id="tEndpoint">—</span></div>
+        <div class="techRow"><span class="k">Response</span><span class="v" id="tResponse">—</span></div>
       </div>
     </section>
 

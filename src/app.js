@@ -1,271 +1,248 @@
-const scenarioSel = document.getElementById("scenario");
-const prevBtn = document.getElementById("prev");
-const nextBtn = document.getElementById("next");
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => [...document.querySelectorAll(sel)];
 
-const title = document.getElementById("title");
-const desc = document.getElementById("desc");
-const tMethod = document.getElementById("tMethod");
-const tEndpoint = document.getElementById("tEndpoint");
-const tStatus = document.getElementById("tStatus");
-
-const dotsEl = document.getElementById("dots");
-const stepText = document.getElementById("stepText");
-
-const nApp = document.getElementById("n-app");
-const nApi = document.getElementById("n-api");
-const nServer = document.getElementById("n-server");
-const nDb = document.getElementById("n-db");
-
-const response = document.getElementById("response");
-const respText = document.getElementById("respText");
-const respCode = document.getElementById("respCode");
-
-const pulseLayer = document.getElementById("pulseLayer");
-
-const geom = {
-  "app->api": document.getElementById("g-app-api"),
-  "api->server": document.getElementById("g-api-server"),
-  "server->db": document.getElementById("g-server-db"),
-  "db->server": document.getElementById("g-db-server"),
-  "server->api": document.getElementById("g-server-api"),
-  "api->app": document.getElementById("g-api-app"),
+const state = {
+  scenario: "get",
+  step: 0,
+  totalSteps: 8,
+  running: false,
 };
-
-function clearActive(){ [nApp,nApi,nServer,nDb].forEach(n=>n.classList.remove("active")); }
-function showResponse(show, text="200 OK", code="200"){
-  response.classList.toggle("show", show);
-  response.setAttribute("aria-hidden", show ? "false" : "true");
-  respText.textContent = text;
-  respCode.textContent = code;
-}
-function removePulseStrokes(){
-  pulseLayer.querySelectorAll(".pulseStroke, .glowStroke").forEach(e => e.remove());
-}
-
-function colors(kind){
-  if(kind === "request") return { main:"rgba(255,204,102,.95)", glow:"rgba(255,204,102,.42)" };
-  if(kind === "response") return { main:"rgba(56,209,122,.95)", glow:"rgba(56,209,122,.42)" };
-  return { main:"rgba(124,92,255,.95)", glow:"rgba(124,92,255,.42)" };
-}
-
-function pulseOnce(key, kind="neutral", duration=860){
-  const base = geom[key];
-  if(!base) return Promise.resolve();
-  removePulseStrokes();
-
-  const { main, glow } = colors(kind);
-  const len = base.getTotalLength();
-  const dashA = Math.max(10, len * 0.20);
-  const dashB = len;
-
-  const g = base.cloneNode(true);
-  g.removeAttribute("id");
-  g.classList.add("glowStroke");
-  g.style.fill = "none";
-  g.style.stroke = glow;
-  g.style.strokeWidth = "3.4";
-  g.style.strokeLinecap = "round";
-  g.style.filter = "url(#glow)";
-  g.style.strokeDasharray = `${dashA} ${dashB}`;
-  g.style.strokeDashoffset = `${len}`;
-  g.style.opacity = "0";
-  pulseLayer.appendChild(g);
-
-  const s = base.cloneNode(true);
-  s.removeAttribute("id");
-  s.classList.add("pulseStroke");
-  s.style.fill = "none";
-  s.style.stroke = main;
-  s.style.strokeWidth = "2";
-  s.style.strokeLinecap = "round";
-  s.style.strokeDasharray = `${dashA} ${dashB}`;
-  s.style.strokeDashoffset = `${len}`;
-  s.style.opacity = "0";
-  pulseLayer.appendChild(s);
-
-  const a1 = g.animate([
-    { strokeDashoffset: len, opacity: 0 },
-    { strokeDashoffset: len * 0.84, opacity: 0.85 },
-    { strokeDashoffset: 0, opacity: 0 }
-  ], { duration: duration + 140, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
-
-  const a2 = s.animate([
-    { strokeDashoffset: len, opacity: 0 },
-    { strokeDashoffset: len * 0.90, opacity: 1 },
-    { strokeDashoffset: 0, opacity: 0 }
-  ], { duration, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
-
-  return Promise.all([a1.finished.catch(()=>{}), a2.finished.catch(()=>{})]).then(()=>{});
-}
 
 const scenarios = {
-  burger: {
+  get: {
     method: "GET",
     endpoint: "/menu/items/42",
-    responseText: "200 OK • { item: … }",
-    responseCode: "200",
-    steps: [
-      { focus:"app",    title:"Du väljer något i appen", desc:"(metafor) du beställer via menyn.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Appen skickar en request.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"API skickar vidare.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Servern hämtar data.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Databasen svarar.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
-      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svaret går tillbaka.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
-      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får svaret.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
-      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa resultatet.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
-    ]
+    story: [
+      { focus: "app", pulse: null, status: "—", text: "Användaren öppnar appen och trycker “Visa detalj”. Appen förbereder en fråga." },
+      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Kan jag få info om denna sak?”" },
+      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot frågan och ser till att den går till rätt server." },
+      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare frågan till servern (som gör jobbet)." },
+      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern förstår vad som efterfrågas och behöver hämta data." },
+      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern frågar databasen efter rätt information." },
+      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen skickar tillbaka datan till servern." },
+      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar svaret via API:t tillbaka till appen. Appen visar resultatet för användaren." },
+    ],
   },
-  uber: {
+
+  post: {
     method: "POST",
-    endpoint: "/rides",
-    responseText: "201 Created • { rideId: … }",
-    responseCode: "201",
-    steps: [
-      { focus:"app",    title:"Du beställer en resa", desc:"Du skickar en request.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Requesten går till API.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern tar emot.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Skapar/sparar.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Bekräftelse tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
-      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svar går tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
-      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får svaret.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
-      { focus:"app",    done:true,                        title:"Klart", desc:"Appen visar bekräftelse.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
-    ]
+    endpoint: "/orders",
+    story: [
+      { focus: "app", pulse: null, status: "—", text: "Användaren trycker “Beställ”. Appen samlar ihop vad som ska skickas." },
+      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Här är min beställning.”" },
+      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot och kontrollerar att allt är i rätt format." },
+      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare beställningen till servern." },
+      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern skapar en ny order och behöver spara den." },
+      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern sparar beställningen i databasen." },
+      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen bekräftar att allt sparats." },
+      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar bekräftelse via API:t tillbaka till appen. Appen visar “Order skapad”." },
+    ],
   },
-  login: {
-    method: "GET",
-    endpoint: "/bookings (Authorization: Bearer …)",
-    responseText: "200 OK • [ … ]",
-    responseCode: "200",
-    steps: [
-      { focus:"app",    title:"Du vill se dina bokningar", desc:"Requesten behöver auth.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Token följer med.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern verifierar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Hämtar bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Data tillbaka.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
-      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svar tillbaka.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
-      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får listan.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
-      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
-    ]
-  }
+
+  put: {
+    method: "PUT",
+    endpoint: "/profile",
+    story: [
+      { focus: "app", pulse: null, status: "—", text: "Användaren ändrar sin profil och trycker “Spara”." },
+      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Uppdatera min profil med detta.”" },
+      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot uppdateringen och skickar den rätt." },
+      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare till servern." },
+      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern uppdaterar informationen." },
+      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern sparar ändringen i databasen." },
+      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen bekräftar uppdateringen." },
+      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar svaret via API:t till appen. Appen visar den nya profilen." },
+    ],
+  },
+
+  delete: {
+    method: "DELETE",
+    endpoint: "/orders/42",
+    story: [
+      { focus: "app", pulse: null, status: "—", text: "Användaren trycker “Ta bort”. Appen frågar systemet att radera något." },
+      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Ta bort detta.”" },
+      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot och skickar borttagnings-uppdraget vidare." },
+      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare till servern." },
+      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern förbereder borttagningen." },
+      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern ber databasen att radera posten." },
+      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen bekräftar att posten är borttagen." },
+      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar “borttagen” via API:t till appen. Appen uppdaterar listan." },
+    ],
+  },
 };
 
-let currentKey = scenarioSel.value;
-let step = 0;
-let busy = false;
+// --- UI refs
+const methodVal = $("#methodVal");
+const endpointVal = $("#endpointVal");
+const statusVal = $("#statusVal");
+const explainText = $("#explainText");
+const stepNow = $("#stepNow");
+const stepTotal = $("#stepTotal");
+const dotsWrap = $("#dots");
 
-function buildDots(count){
-  dotsEl.innerHTML = "";
-  for(let i=0;i<count;i++){
+const nextBtn = $("#nextBtn");
+const resetBtn = $("#resetBtn");
+
+const nodeApp = $("#nodeApp");
+const nodeApi = $("#nodeApi");
+const nodeServer = $("#nodeServer");
+const nodeDb = $("#nodeDb");
+
+const pulseReq1 = $("#pulseReq1");
+const pulseReq2 = $("#pulseReq2");
+const pulseReq3 = $("#pulseReq3");
+const pulseRes1 = $("#pulseRes1");
+const pulseRes2 = $("#pulseRes2");
+
+function buildDots(total) {
+  dotsWrap.innerHTML = "";
+  for (let i = 0; i < total; i++) {
     const d = document.createElement("div");
     d.className = "dot";
-    dotsEl.appendChild(d);
+    dotsWrap.appendChild(d);
   }
 }
 
-function render(){
-  const sc = scenarios[currentKey];
-  const total = sc.steps.length;
+function setScenario(key) {
+  state.scenario = key;
+  state.step = 0;
+  state.running = false;
 
-  stepText.textContent = `Steg ${Math.min(step+1,total)}/${total}`;
-  Array.from(dotsEl.children).forEach((d,i)=>d.classList.toggle("on", i===step));
+  const s = scenarios[key];
+  methodVal.textContent = s.method;
+  endpointVal.textContent = s.endpoint;
+  statusVal.textContent = "—";
+  explainText.textContent = "Tryck Nästa för att starta resan.";
 
-  prevBtn.disabled = (step===0);
-  nextBtn.textContent = (step>=total-1) ? "Spela igen" : "Nästa";
+  updateStepper();
+  clearFocus();
+  stopAllPulses();
 }
 
-function applyStepUI(s){
-  title.textContent = s.title;
-  desc.textContent = s.desc;
-  tMethod.textContent = s.tech?.method ?? "—";
-  tEndpoint.textContent = s.tech?.endpoint ?? "—";
-  tStatus.textContent = s.tech?.status ?? "—";
-
-  clearActive();
-  if(s.focus==="app") nApp.classList.add("active");
-  if(s.focus==="api") nApi.classList.add("active");
-  if(s.focus==="server") nServer.classList.add("active");
-  if(s.focus==="db") nDb.classList.add("active");
+function clearFocus() {
+  [nodeApp, nodeApi, nodeServer, nodeDb].forEach((n) => n.classList.remove("isFocus"));
 }
 
-async function playCurrent(){
-  const sc = scenarios[currentKey];
-  const s = sc.steps[step];
-
-  applyStepUI(s);
-
-  if(s.done){
-    showResponse(true, sc.responseText, sc.responseCode);
-    return;
-  }
-  if(s.pulse){
-    const [pathKey, kind] = s.pulse;
-    await pulseOnce(pathKey, kind);
-  }
+function focusNode(which) {
+  clearFocus();
+  const map = { app: nodeApp, api: nodeApi, server: nodeServer, db: nodeDb };
+  map[which]?.classList.add("isFocus");
 }
 
-function resetScenario(){
-  busy = false;
-  removePulseStrokes();
-  showResponse(false);
-  step = 0;
-
-  const sc = scenarios[currentKey];
-  buildDots(sc.steps.length);
-
-  title.textContent = "Välj scenario och tryck Nästa";
-  desc.textContent = "En puls i taget visar exakt hur request → response går.";
-  tMethod.textContent = sc.method;
-  tEndpoint.textContent = sc.endpoint;
-  tStatus.textContent = "—";
-
-  clearActive();
-  render();
-}
-
-function onNext(){
-  if(busy) return;
-  const sc = scenarios[currentKey];
-  const total = sc.steps.length;
-
-  if(step >= total-1){
-    resetScenario();
-    return;
-  }
-
-  busy = true;
-  removePulseStrokes();
-  showResponse(false);
-
-  playCurrent().then(()=>{
-    step = Math.min(total-1, step+1);
-    render();
-    busy = false;
+function stopAllPulses() {
+  [pulseReq1, pulseReq2, pulseReq3, pulseRes1, pulseRes2].forEach((p) => {
+    p.classList.remove("run");
+    // force reflow-safe reset
+    p.style.animation = "none";
+    p.offsetHeight; // eslint-disable-line no-unused-expressions
+    p.style.animation = "";
   });
 }
 
-function onPrev(){
-  if(busy || step===0) return;
-  busy = true;
-  removePulseStrokes();
-  showResponse(false);
+function runPulse(name) {
+  stopAllPulses();
+  const map = {
+    req1: pulseReq1,
+    req2: pulseReq2,
+    req3: pulseReq3,
+    res1: pulseRes1,
+    res2: pulseRes2,
+  };
+  const p = map[name];
+  if (!p) return;
+  p.classList.add("run");
+}
 
-  step = Math.max(0, step-1);
-  render();
+function updateStepper() {
+  stepTotal.textContent = String(state.totalSteps);
+  stepNow.textContent = String(state.step);
 
-  playCurrent().then(()=>{
-    busy = false;
+  const dots = $$(".dot");
+  dots.forEach((d, i) => {
+    d.classList.remove("active", "done");
+    if (i < state.step - 1) d.classList.add("done");
+    if (i === state.step - 1) d.classList.add("active");
   });
 }
 
-scenarioSel.addEventListener("change", () => {
-  currentKey = scenarioSel.value;
-  resetScenario();
+function applyStep() {
+  const s = scenarios[state.scenario];
+  const idx = Math.max(0, Math.min(state.step - 1, s.story.length - 1));
+  const frame = s.story[idx];
+
+  focusNode(frame.focus);
+  statusVal.textContent = frame.status;
+  explainText.textContent = frame.text;
+
+  if (frame.pulse) runPulse(frame.pulse);
+  else stopAllPulses();
+}
+
+async function next() {
+  if (state.running) return;
+  state.running = true;
+
+  const s = scenarios[state.scenario];
+
+  // step 0 -> step 1: start
+  if (state.step < state.totalSteps) {
+    state.step += 1;
+    updateStepper();
+    applyStep();
+
+    // small lock so animations feel clean
+    await new Promise((r) => setTimeout(r, 520));
+  }
+
+  // if finished, keep last state and unlock
+  if (state.step >= state.totalSteps) {
+    nextBtn.textContent = "Kör igen";
+    state.running = false;
+    return;
+  }
+
+  nextBtn.textContent = "Nästa";
+  state.running = false;
+}
+
+function resetAll() {
+  state.step = 0;
+  state.running = false;
+  statusVal.textContent = "—";
+  explainText.textContent = "Välj scenario och tryck Nästa för att starta.";
+  nextBtn.textContent = "Nästa";
+  updateStepper();
+  clearFocus();
+  stopAllPulses();
+}
+
+// Segmented scenario
+$$(".segBtn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    $$(".segBtn").forEach((b) => {
+      b.classList.remove("isActive");
+      b.setAttribute("aria-selected", "false");
+    });
+    btn.classList.add("isActive");
+    btn.setAttribute("aria-selected", "true");
+    setScenario(btn.dataset.scenario);
+  });
 });
 
-// iOS: lyssna på både touchstart och click
-nextBtn.addEventListener("touchstart", (e)=>{ e.preventDefault(); onNext(); }, {passive:false});
-prevBtn.addEventListener("touchstart", (e)=>{ e.preventDefault(); onPrev(); }, {passive:false});
-nextBtn.addEventListener("click", onNext);
-prevBtn.addEventListener("click", onPrev);
+// Buttons
+nextBtn.addEventListener("click", () => {
+  // If finished, restart same scenario
+  if (state.step >= state.totalSteps) {
+    resetAll();
+    return;
+  }
+  next();
+});
+resetBtn.addEventListener("click", resetAll);
 
-resetScenario();
+// Init
+(function init() {
+  state.totalSteps = 8;
+  buildDots(state.totalSteps);
+  setScenario("get");
+  updateStepper();
+})();

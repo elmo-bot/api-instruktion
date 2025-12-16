@@ -1,4 +1,3 @@
-/* deploy: 1 */
 :root{
   --bg0:#070A14;
   --bg1:#0B1026;
@@ -16,8 +15,6 @@
 
 *{box-sizing:border-box}
 html,body{height:100%}
-
-/* Viktigt för iOS touch */
 button, select { touch-action: manipulation; }
 
 body{
@@ -42,24 +39,23 @@ body{
   background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
   box-shadow: var(--shadow);
   overflow:hidden;
-
-  /* ✅ gör en egen stacking context så z-index beter sig stabilt på iOS */
   position: relative;
   isolation: isolate;
 }
 
+/* Header alltid synlig och stabil */
 .top{
-  position: relative;
-  z-index: 50; /* ✅ alltid klickbart ovanpå allt */
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
   padding: 14px;
   border-bottom: 1px solid rgba(255,255,255,.06);
-  background: rgba(7,10,20,.35);
-  /* backdrop-filter kan stöka på iOS med hit-testing, så vi tonar ner: */
-  /* backdrop-filter: blur(10px); */
+  background: rgba(7,10,20,.82);
+  backdrop-filter: blur(10px);
 }
 
 .brand{
@@ -74,13 +70,10 @@ body{
 .brand img{ height:20px; width:auto; display:block; opacity:.95; }
 
 .controls{
-  position: relative;
-  z-index: 60;
   display:flex;
   align-items:center;
   gap:10px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
+  flex-wrap:nowrap;
 }
 
 .select{
@@ -91,6 +84,7 @@ body{
   padding: 10px 12px;
   font-weight: 850;
   outline:none;
+  max-width: 48vw;
 }
 
 .btn{
@@ -104,16 +98,14 @@ body{
   box-shadow: var(--shadow2);
   cursor:pointer;
   transition: transform .12s ease, filter .12s ease, border-color .22s ease;
+  white-space: nowrap;
 }
-.btn:hover{ transform: translateY(-1px); filter: brightness(1.05); }
 .btn.primary{
   border-color: rgba(124,92,255,.32);
   background: linear-gradient(180deg, rgba(124,92,255,.92), rgba(124,92,255,.70));
 }
 
 .hero{
-  position: relative;
-  z-index: 10;
   display:grid;
   grid-template-columns: 1fr 1.2fr;
   gap: 14px;
@@ -121,8 +113,6 @@ body{
 }
 
 .copy{
-  position: relative;
-  z-index: 20;
   padding: 14px;
   border-radius: 22px;
   border: 1px solid rgba(255,255,255,.08);
@@ -183,8 +173,6 @@ p{
 .stepText{ margin-top: 10px; color: rgba(245,247,255,.62); font-weight: 850; font-size: 12px; }
 
 .scene{
-  position: relative;
-  z-index: 20;
   padding: 14px;
   border-radius: 22px;
   border: 1px solid rgba(255,255,255,.08);
@@ -202,7 +190,7 @@ p{
   min-height: 360px;
 }
 
-/* ✅ SUPER-VIKTIG: dekor får aldrig fånga touch/click */
+/* dekor kan aldrig fånga touch */
 .pulseLayer,
 .pulseLayer *{
   pointer-events:none !important;
@@ -233,8 +221,6 @@ p{
   border: 1px solid var(--stroke2);
   background: rgba(16,24,52,.52);
   box-shadow: var(--shadow2);
-  /* tar bort backdrop-filter pga iOS hit-testing-problem */
-  /* backdrop-filter: blur(12px); */
   z-index:3;
   pointer-events:none;
   transition: transform .28s var(--ease), border-color .22s ease, opacity .22s ease;
@@ -248,9 +234,10 @@ p{
   opacity: 1;
 }
 
+/* Desktop-positioner (ok) */
 .appNode{ left: 14px; top: 30px; width: 34%; }
-.apiNode{ left: 50%; top: 46%; transform: translate(-50%, -50%); width: 30%; }
 .serverNode{ right: 14px; top: 30px; width: 34%; }
+.apiNode{ left: 50%; top: 46%; transform: translate(-50%, -50%); width: 30%; }
 .dbNode{ right: 22px; bottom: 18px; width: 32%; }
 
 .response{
@@ -267,6 +254,9 @@ p{
   opacity:0;
   transform: translateY(10px);
   transition: opacity .35s ease, transform .35s var(--ease);
+  display:flex;
+  align-items:center;
+  gap:10px;
 }
 .response.show{ opacity:1; transform: translateY(0); }
 .respDot{
@@ -288,16 +278,33 @@ p{
   font-size: 12px;
 }
 
-/* Mobil: stabil höjd + allt syns */
+/* ✅ Mobil: gör noderna till "stackade kort" som aldrig överlappar */
 @media (max-width: 860px){
   .hero{ grid-template-columns: 1fr; }
+
+  .controls{ gap:8px; }
+  .select{ max-width: 52vw; }
+
   .stage{
     aspect-ratio: auto;
-    min-height: 420px;
-    height: 70vh;
+    height: 64vh;
+    min-height: 520px;
   }
-  .appNode{ left: 12px; top: 18px; width: 72%; }
-  .serverNode{ right: 12px; top: 18px; width: 72%; }
-  .apiNode{ left: 50%; top: 45%; width: 72%; }
-  .dbNode{ right: 12px; bottom: 18px; width: 72%; }
+
+  /* vi använder toppen/mitten/botten layout */
+  .appNode{
+    left: 12px; top: 18px; width: calc(50% - 16px);
+  }
+  .serverNode{
+    left: calc(50% + 4px); top: 18px; width: calc(50% - 16px);
+  }
+  .apiNode{
+    left: 12px; right: 12px; top: 44%;
+    width: auto;
+    transform: none;
+  }
+  .dbNode{
+    left: 12px; right: 12px; bottom: 18px;
+    width: auto;
+  }
 }

@@ -1,26 +1,63 @@
 const reel = document.getElementById("reel");
 const stage = document.getElementById("stage");
-const nodes = Array.from(document.querySelectorAll(".node"));
 const barrier = document.getElementById("barrier");
 
 const headline = document.getElementById("headline");
 const subhead = document.getElementById("subhead");
 
-const toggleMode = document.getElementById("toggleMode");
-const presenterBtn = document.getElementById("presenterBtn");
 const filmMode = document.getElementById("filmMode");
+const runBtn = document.getElementById("runBtn");
 
-const steps = Array.from(document.querySelectorAll(".step"));
+const reqSelect = document.getElementById("reqSelect");
+const pulseBtn = document.getElementById("pulseBtn");
+const nextBtn = document.getElementById("nextBtn");
+const resetBtn = document.getElementById("resetBtn");
+
 const capTitle = document.getElementById("capTitle");
 const capText = document.getElementById("capText");
 
-const pulseOnceBtn = document.getElementById("pulseOnce");
-const nextPulseBtn = document.getElementById("nextPulse");
-const resetBtn = document.getElementById("reset");
+const tMethod = document.getElementById("tMethod");
+const tEndpoint = document.getElementById("tEndpoint");
+const tResponse = document.getElementById("tResponse");
 
+const nodes = Array.from(document.querySelectorAll(".node"));
 const pulseLayer = document.getElementById("pulseLayer");
 
-// ---- Icons (inline SVG) ----
+// --- SVG geometry paths ---
+const geom = {
+  "guest->api":  document.getElementById("g-guest-api"),
+  "menu->api":   document.getElementById("g-menu-api"),
+  "api->server": document.getElementById("g-api-server"),
+  "api->data":   document.getElementById("g-api-data"),
+  "server->api": document.getElementById("g-server-api"),
+  "data->api":   document.getElementById("g-data-api"),
+  "api->guest":  document.getElementById("g-api-guest"),
+};
+
+let timers = [];
+let running = false;
+let selectedNode = null;
+
+// Step engine for “Nästa steg”
+let manualSteps = [];
+let manualIndex = 0;
+
+function clearTimers(){ timers.forEach(t => clearTimeout(t)); timers = []; }
+function setCaption(t, x){ capTitle.textContent = t; capText.textContent = x; }
+function setHeader(h, s){ headline.textContent = h; subhead.textContent = s; }
+
+function clearActive(){
+  nodes.forEach(n => n.classList.remove("active"));
+}
+
+function activate(nodeKey){
+  clearActive();
+  const el = nodes.find(n => n.dataset.node === nodeKey);
+  if(el) el.classList.add("active");
+  selectedNode = nodeKey;
+}
+
+// --- Icons ---
 function iconSVG(name){
   if(name === "guest") return `
     <svg viewBox="0 0 24 24" fill="none">
@@ -54,296 +91,266 @@ function iconSVG(name){
     </svg>`;
   return "";
 }
-document.querySelectorAll(".icon").forEach(el => {
-  el.innerHTML = iconSVG(el.dataset.ico);
-});
+document.querySelectorAll(".icon").forEach(el => { el.innerHTML = iconSVG(el.dataset.ico); });
 
-// ---- Helpers ----
-let timers = [];
-function clearTimers(){ timers.forEach(t => clearTimeout(t)); timers = []; }
-
-function setCaption(t, x){ capTitle.textContent = t; capText.textContent = x; }
-function setHeader(h, s){ headline.textContent = h; subhead.textContent = s; }
-
-function clearActive(){
-  nodes.forEach(n => n.classList.remove("active"));
-}
-function focusNode(key){
-  stage.classList.add("dim");
-  clearActive();
-  const el = nodes.find(n => n.dataset.node === key);
-  if(el) el.classList.add("active");
-}
-function overview(){
-  stage.classList.remove("dim");
-  clearActive();
-  barrier.classList.remove("show");
-  setHeader("Klicka runt: tydliga pulser", "Välj en ruta → se en puls gå exakt dit den ska. Presenter Mode = stegvis.");
-  setCaption("Översikt", "Tryck på en ruta. Pulsen visar exakt kommunikationen.");
-  steps.forEach(s => s.classList.remove("on"));
+// --- Pulse rendering (WAAPI = stabilt i iOS Safari) ---
+function removePulseStrokes(){
+  pulseLayer.querySelectorAll(".pulseStroke, .glowStroke").forEach(e => e.remove());
 }
 
-// ---- Pulse system (SVG clone + glow) ----
-// We keep base paths as geometry, then clone into animated strokes.
-// This avoids CSS/JS fighting and makes Safari smooth.
-const geom = {
-  "guest-api": document.getElementById("p-guest-api"),
-  "menu-api": document.getElementById("p-menu-api"),
-  "api-guest": document.getElementById("p-api-guest"),
-  "api-server": document.getElementById("p-api-server"),
-  "api-data": document.getElementById("p-api-data"),
-  "server-api": document.getElementById("p-server-api"),
-  "data-api": document.getElementById("p-data-api")
-};
-
-function removeActivePulseStrokes(){
-  const olds = pulseLayer.querySelectorAll(".pulseStroke, .glowStroke");
-  olds.forEach(o => o.remove());
+function pulseColor(kind){
+  if(kind === "request") return { main: "rgba(255,204,102,.95)", glow: "rgba(255,204,102,.45)" };
+  if(kind === "response") return { main: "rgba(56,209,122,.95)", glow: "rgba(56,209,122,.45)" };
+  return { main: "rgba(124,92,255,.95)", glow: "rgba(124,92,255,.45)" };
 }
 
-function colorFor(from, to){
-  // Subtle semantics: requests (towards server) = warm, responses = accent
-  const key = `${from}-${to}`;
-  if(key.includes("server") || key.includes("api-server") || key.includes("server-api")) return { main: "rgba(255,204,102,.95)", glow: "rgba(255,204,102,.55)" };
-  if(key.includes("data") || key.includes("api-data") || key.includes("data-api")) return { main: "rgba(56,209,122,.95)", glow: "rgba(56,209,122,.52)" };
-  return { main: "rgba(124,92,255,.95)", glow: "rgba(124,92,255,.55)" };
-}
-
-function playPulse(from, to){
-  clearTimers();
-  removeActivePulseStrokes();
-
-  const key = `${from}-${to}`;
+function playPulse(key, kind="neutral", duration=950){
   const base = geom[key];
-  if(!base) return false;
+  if(!base) return;
 
-  const colors = colorFor(from, to);
+  removePulseStrokes();
 
-  // Create glow stroke
-  const glow = base.cloneNode(true);
-  glow.removeAttribute("id");
-  glow.setAttribute("class", "glowStroke");
-  glow.style.stroke = colors.glow;
-  glow.style.animation = `afterGlow var(--pulseDur) cubic-bezier(.4,0,.2,1) forwards`;
+  const { main, glow } = pulseColor(kind);
+  const len = base.getTotalLength();
 
-  // Create main stroke
-  const stroke = base.cloneNode(true);
-  stroke.removeAttribute("id");
-  stroke.setAttribute("class", "pulseStroke");
-  stroke.style.stroke = colors.main;
-  stroke.style.animation = `pulseMove var(--pulseDur) cubic-bezier(.4,0,.2,1) forwards`;
+  const dashA = Math.max(10, len * 0.18);
+  const dashB = len;
 
-  // Put above baseline but under nodes
-  pulseLayer.appendChild(glow);
-  pulseLayer.appendChild(stroke);
+  // Glow
+  const g = base.cloneNode(true);
+  g.removeAttribute("id");
+  g.setAttribute("class", "glowStroke");
+  g.style.fill = "none";
+  g.style.stroke = glow;
+  g.style.strokeWidth = "3.6";
+  g.style.strokeLinecap = "round";
+  g.style.filter = "url(#softGlow)";
+  g.style.strokeDasharray = `${dashA} ${dashB}`;
+  g.style.strokeDashoffset = `${len}`;
+  g.style.opacity = "0";
+  pulseLayer.appendChild(g);
 
-  return true;
+  // Main
+  const s = base.cloneNode(true);
+  s.removeAttribute("id");
+  s.setAttribute("class", "pulseStroke");
+  s.style.fill = "none";
+  s.style.stroke = main;
+  s.style.strokeWidth = "2";
+  s.style.strokeLinecap = "round";
+  s.style.strokeDasharray = `${dashA} ${dashB}`;
+  s.style.strokeDashoffset = `${len}`;
+  s.style.opacity = "0";
+  pulseLayer.appendChild(s);
+
+  // Animate with WAAPI
+  g.animate([
+    { strokeDashoffset: len, opacity: 0 },
+    { strokeDashoffset: len * 0.85, opacity: 0.85 },
+    { strokeDashoffset: 0, opacity: 0 }
+  ], { duration: duration + 120, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
+
+  s.animate([
+    { strokeDashoffset: len, opacity: 0 },
+    { strokeDashoffset: len * 0.9, opacity: 1 },
+    { strokeDashoffset: 0, opacity: 0 }
+  ], { duration, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
 }
 
-// ---- Interaction logic (pedagogical lock + presenter mode) ----
-let focusMode = true;          // dim others on focus
-let presenterMode = false;     // click to advance sequence
-let selected = null;           // current selected node (guest/menu/api/server/data)
-let sequence = [];             // current pulse sequence
-let seqIndex = 0;
-
-// Allowed “concept map” (lock)
-const allowed = {
-  guest: [["guest","api"]],
-  menu:  [["menu","api"]],
-  api:   [["api","guest"], ["api","server"], ["api","data"]],
-  server:[["server","api"]],
-  data:  [["data","api"]]
+// --- Request presets (metafor + teknik) ---
+const presets = {
+  burger: {
+    meta: [
+      { title:"Metafor", text:"Gästen väljer en hamburgare i menyn." },
+      { title:"Metafor", text:"API tar beställningen." },
+      { title:"Metafor", text:"Köket (servern) hämtar/löser det." },
+      { title:"Metafor", text:"API levererar svaret." },
+    ],
+    tech: { method:"GET", endpoint:"/menu/items/42", response:"200 OK • { item: … }" },
+    flow: [
+      { focus:"menu",  pulse:"menu->api",   kind:"neutral" },
+      { focus:"api",   pulse:"guest->api",  kind:"neutral", note:"(du beställer via API)" },
+      { focus:"server",pulse:"api->server", kind:"request" },
+      { focus:"data",  pulse:"server->api", kind:"response" },
+      { focus:"guest", pulse:"api->guest",  kind:"neutral" },
+    ]
+  },
+  uber: {
+    meta: [
+      { title:"Metafor", text:"Du beställer en resa i appen." },
+      { title:"Metafor", text:"API skickar din beställning." },
+      { title:"Metafor", text:"Servern matchar förare." },
+      { title:"Metafor", text:"Du får bekräftelse tillbaka." },
+    ],
+    tech: { method:"POST", endpoint:"/rides", response:"201 Created • { rideId: … }" },
+    flow: [
+      { focus:"menu",  pulse:"menu->api",   kind:"neutral" },
+      { focus:"api",   pulse:"guest->api",  kind:"neutral" },
+      { focus:"server",pulse:"api->server", kind:"request" },
+      { focus:"data",  pulse:"server->api", kind:"response" },
+      { focus:"guest", pulse:"api->guest",  kind:"neutral" },
+    ]
+  },
+  login: {
+    meta: [
+      { title:"Metafor", text:"Du vill se dina bokningar." },
+      { title:"Metafor", text:"API ber servern om dina data." },
+      { title:"Metafor", text:"Servern kollar att du är inloggad." },
+      { title:"Metafor", text:"Du får svar tillbaka." },
+    ],
+    tech: { method:"GET", endpoint:"/bookings  (Authorization: Bearer …)", response:"200 OK • [ … ]" },
+    flow: [
+      { focus:"menu",  pulse:"menu->api",   kind:"neutral" },
+      { focus:"api",   pulse:"guest->api",  kind:"neutral" },
+      { focus:"server",pulse:"api->server", kind:"request" },
+      { focus:"data",  pulse:"server->api", kind:"response" },
+      { focus:"guest", pulse:"api->guest",  kind:"neutral" },
+    ]
+  }
 };
 
-function buildSequence(nodeKey){
-  return (allowed[nodeKey] || []).map(([a,b]) => ({ from:a, to:b }));
+function applyTech(p){
+  tMethod.textContent = p.tech.method;
+  tEndpoint.textContent = p.tech.endpoint;
+  tResponse.textContent = p.tech.response;
 }
 
-function applySelection(nodeKey){
-  selected = nodeKey;
-  seqIndex = 0;
-  sequence = buildSequence(nodeKey);
+// --- Running flows (synkade steg) ---
+function runFlow(presetKey){
+  const p = presets[presetKey];
+  if(!p) return;
 
-  // Focus visuals
-  if(focusMode){
-    focusNode(nodeKey);
-  }else{
-    stage.classList.remove("dim");
-    clearActive();
-    const el = nodes.find(n => n.dataset.node === nodeKey);
-    if(el) el.classList.add("active");
-  }
-
-  // Barrier concept: show when server is involved or when api is selected (since it "crosses")
-  const showBar = (nodeKey === "server") || (nodeKey === "api");
-  barrier.classList.toggle("show", showBar);
-
-  // Caption text
-  const titles = { guest:"Gästen", menu:"Menyn", api:"API", server:"Servern", data:"Svaret" };
-  setCaption(titles[nodeKey] || "Fokus", presenterMode
-    ? "Presenter Mode: tryck “Nästa” eller klicka igen för nästa puls."
-    : "Tryck igen eller “Puls” för att spela pulsen."
-  );
-}
-
-function pulseOnce(){
-  if(!selected){
-    setCaption("Tips", "Välj en ruta först.");
-    return;
-  }
-  if(sequence.length === 0) return;
-
-  // In non-presenter: always play the first pulse for that selection
-  // In presenter: play current index and do NOT auto-advance unless asked
-  const item = presenterMode ? sequence[seqIndex] : sequence[0];
-  playPulse(item.from, item.to);
-
-  // If not presenter, done.
-  if(!presenterMode) return;
-}
-
-function nextPulse(){
-  if(!selected){
-    setCaption("Tips", "Välj en ruta först.");
-    return;
-  }
-  if(sequence.length === 0) return;
-
-  const item = sequence[seqIndex];
-  playPulse(item.from, item.to);
-
-  seqIndex = (seqIndex + 1) % sequence.length;
-
-  // Keep captions clean
-  if(selected === "api"){
-    const labels = ["API → Gäst", "API → Server", "API → Svar"];
-    const idxShown = (seqIndex === 0) ? 3 : seqIndex; // after increment
-    setCaption("API", `Presenter Mode: ${labels[idxShown-1]}`);
-  }
-}
-
-function clickBehavior(nodeKey){
-  // If you click a different node: select it
-  if(selected !== nodeKey){
-    applySelection(nodeKey);
-    // In normal mode, immediately show the relevant pulse once (feels premium)
-    if(!presenterMode) pulseOnce();
-    return;
-  }
-
-  // If clicking same node:
-  // - Presenter: advance one pulse
-  // - Normal: replay its pulse
-  if(presenterMode){
-    nextPulse();
-  }else{
-    pulseOnce();
-  }
-}
-
-// ---- Steps (optional guided learning) ----
-function setStep(n){
-  steps.forEach(s => s.classList.toggle("on", s.dataset.step === String(n)));
-
-  if(n === 0){
-    overview();
-    selected = null;
-    sequence = [];
-    seqIndex = 0;
-    removeActivePulseStrokes();
-    return;
-  }
-
-  if(n === 1){
-    applySelection("guest");
-    if(!presenterMode) playPulse("guest","api");
-    setHeader("Steg 1: Du beställer", "Gästen pratar inte med köket direkt — pulsen visar vägen till API.");
-    setCaption("Steg 1", "Gästen → API (en tydlig kontaktpunkt)");
-  }
-  if(n === 2){
-    applySelection("api");
-    setHeader("Steg 2: API tar emot", "API kan prata med flera — pulserna visar kopplingarna.");
-    setCaption("Steg 2", presenterMode ? "Presenter: klicka Nästa för API:s pulser." : "API → Gäst/Server/Svar (sekventiellt)");
-    if(!presenterMode){
-      // play a tasteful sequence once
-      playPulse("api","guest");
-      timers.push(setTimeout(()=> playPulse("api","server"), 520));
-      timers.push(setTimeout(()=> playPulse("api","data"), 1040));
-    }
-  }
-  if(n === 3){
-    applySelection("server");
-    setHeader("Steg 3: Köket är skyddat", "Barriären visar att du inte går in — API sköter det.");
-    setCaption("Steg 3", "Server → API (kontakt sker via mellanhand)");
-    if(!presenterMode) playPulse("server","api");
-  }
-  if(n === 4){
-    applySelection("data");
-    setHeader("Steg 4: Du får svaret", "Du får bara det du bad om — inte hela köket.");
-    setCaption("Steg 4", "Svar → API (och vidare till appen)");
-    if(!presenterMode) playPulse("data","api");
-  }
-}
-
-// ---- UI Buttons ----
-toggleMode.addEventListener("click", () => {
-  focusMode = !focusMode;
-  toggleMode.textContent = focusMode ? "Fokus" : "Fritt";
-  if(focusMode){
-    if(selected) focusNode(selected);
-    setCaption("Fokusläge", "Allt dimmas utom det du pratar om.");
-  } else {
-    stage.classList.remove("dim");
-    setCaption("Fritt läge", "Allt syns – pulserna visar ändå vägen.");
-  }
-});
-
-presenterBtn.addEventListener("click", () => {
-  presenterMode = !presenterMode;
-  presenterBtn.classList.toggle("primary", presenterMode);
-  presenterBtn.textContent = presenterMode ? "Presenter: På" : "Presenter";
-
-  if(presenterMode){
-    setHeader("Presenter Mode", "Klicka samma ruta igen för nästa puls. Perfekt för live-berättande.");
-    setCaption("Presenter Mode", "Välj t.ex. API → klicka igen för att pulsera till nästa koppling.");
-  } else {
-    setHeader("Interaktivt", "Klicka en ruta → en tydlig puls. Minimalt brus.");
-    setCaption("Interaktivt", "Du kan klicka runt fritt och spela pulser när du vill.");
-  }
-});
-
-filmMode.addEventListener("click", () => {
-  reel.classList.toggle("film");
-});
-
-pulseOnceBtn.addEventListener("click", () => pulseOnce());
-nextPulseBtn.addEventListener("click", () => nextPulse());
-resetBtn.addEventListener("click", () => {
+  running = true;
   clearTimers();
-  removeActivePulseStrokes();
-  presenterMode = false;
-  presenterBtn.classList.remove("primary");
-  presenterBtn.textContent = "Presenter";
-  overview();
-  selected = null;
-  sequence = [];
-  seqIndex = 0;
-  setHeader("Klicka runt: tydliga pulser", "Välj en ruta → se en puls gå exakt dit den ska.");
+  removePulseStrokes();
+
+  applyTech(p);
+  setHeader("Kör kedjan", "Metafor + teknik i synk. Tryck Reset om du vill avbryta.");
+
+  // Barrier: visa när vi jobbar mot servern
+  barrier.classList.add("show");
+
+  const steps = p.flow;
+  const meta = p.meta;
+
+  const stepMs = 1050; // jämn, proffsig rytm
+
+  steps.forEach((st, i) => {
+    timers.push(setTimeout(() => {
+      activate(st.focus);
+
+      // caption sync: metafor
+      const m = meta[Math.min(i, meta.length-1)];
+      setCaption(m.title, m.text);
+
+      // pulse
+      playPulse(st.pulse, st.kind, 900);
+
+      // extra: vid serversteg, förstärk “ingen direktåtkomst”
+      if(st.focus === "server"){
+        barrier.classList.add("show");
+      }
+      if(st.focus === "guest"){
+        barrier.classList.remove("show");
+      }
+
+    }, i * stepMs));
+  });
+
+  timers.push(setTimeout(() => {
+    running = false;
+    setCaption("Klart", "Nu kan du klicka runt och visa enskilda pulser per nod.");
+  }, steps.length * stepMs + 200));
+}
+
+// Manual stepping (Nästa steg)
+function buildManual(presetKey){
+  const p = presets[presetKey];
+  manualSteps = p ? p.flow : [];
+  manualIndex = 0;
+  if(p) applyTech(p);
+}
+
+function doNext(){
+  if(manualSteps.length === 0) buildManual(reqSelect.value);
+  const st = manualSteps[manualIndex];
+  if(!st) return;
+
+  activate(st.focus);
+  playPulse(st.pulse, st.kind, 900);
+
+  // captions: visa både metafor + tekniskt kompakt
+  const p = presets[reqSelect.value];
+  const m = p.meta[Math.min(manualIndex, p.meta.length-1)];
+  setCaption(m.title, `${m.text}  •  ${p.tech.method} ${p.tech.endpoint}`);
+
+  barrier.classList.toggle("show", st.focus === "server" || st.focus === "api");
+
+  manualIndex = (manualIndex + 1) % manualSteps.length;
+}
+
+// Node-click pulses (snabbt & tydligt)
+function pulseForNode(nodeKey){
+  // “pedagogisk lock”: bara logiska pulser
+  if(nodeKey === "guest"){ activate("guest"); playPulse("guest->api", "neutral", 900); setCaption("Gästen", "Gästen pratar med API (inte med köket)."); return; }
+  if(nodeKey === "menu"){ activate("menu"); playPulse("menu->api", "neutral", 900); setCaption("Menyn", "Appen skickar valet vidare till API."); return; }
+  if(nodeKey === "api"){  activate("api");  playPulse("api->server", "request", 900); setCaption("API", "API skickar request till servern."); barrier.classList.add("show"); return; }
+  if(nodeKey === "server"){ activate("server"); playPulse("server->api", "response", 900); setCaption("Servern", "Servern svarar till API (response)."); barrier.classList.add("show"); return; }
+  if(nodeKey === "data"){ activate("data"); playPulse("data->api", "response", 900); setCaption("Svar", "Svaret går tillbaka via API."); return; }
+}
+
+// --- UI events ---
+filmMode.addEventListener("click", () => reel.classList.toggle("film"));
+
+runBtn.addEventListener("click", () => {
+  if(running) return;
+  buildManual(reqSelect.value);
+  runFlow(reqSelect.value);
 });
 
-// ---- Node Events ----
+pulseBtn.addEventListener("click", () => {
+  if(!selectedNode) { setCaption("Tips", "Tryck på en nod först."); return; }
+  pulseForNode(selectedNode);
+});
+
+nextBtn.addEventListener("click", () => {
+  if(running) return;
+  buildManual(reqSelect.value);
+  doNext();
+});
+
+resetBtn.addEventListener("click", () => {
+  running = false;
+  clearTimers();
+  removePulseStrokes();
+  barrier.classList.remove("show");
+  clearActive();
+  selectedNode = null;
+
+  setHeader("Välj en förfrågan och kör kedjan", "Tryck på noderna för fokus + puls. Eller välj en förfrågan längst ner för en komplett “request → response”.");
+  setCaption("Redo", "Välj en förfrågan och tryck “Kör”. Eller tryck på en nod för en snabb puls.");
+  tMethod.textContent = "—";
+  tEndpoint.textContent = "—";
+  tResponse.textContent = "—";
+});
+
+reqSelect.addEventListener("change", () => {
+  buildManual(reqSelect.value);
+  const p = presets[reqSelect.value];
+  setCaption("Vald förfrågan", p.meta[0].text);
+});
+
+// Node clickable
 nodes.forEach(n => {
-  n.addEventListener("click", () => clickBehavior(n.dataset.node));
-  n.addEventListener("keydown", (e) => {
-    if(e.key === "Enter" || e.key === " "){
-      e.preventDefault();
-      n.click();
-    }
+  n.addEventListener("click", () => {
+    if(running) return;
+    const key = n.dataset.node;
+    activate(key);
+    pulseForNode(key);
   });
 });
 
-steps.forEach(s => s.addEventListener("click", () => setStep(Number(s.dataset.step))));
-
-// ---- Initial ----
-overview();
+// Init
+setCaption("Redo", "Välj en förfrågan och tryck “Kör”. Eller tryck på en nod för en snabb puls.");
+buildManual(reqSelect.value);
+applyTech(presets[reqSelect.value]);

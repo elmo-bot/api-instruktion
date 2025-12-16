@@ -52,7 +52,6 @@ function colors(kind){
   return { main:"rgba(124,92,255,.95)", glow:"rgba(124,92,255,.42)" };
 }
 
-// One pulse, always the same behavior (no “modes”)
 function pulseOnce(key, kind="neutral", duration=880){
   const base = geom[key];
   if(!base) return Promise.resolve();
@@ -65,7 +64,6 @@ function pulseOnce(key, kind="neutral", duration=880){
   const dashA = Math.max(10, len * 0.20);
   const dashB = len;
 
-  // Glow stroke
   const g = base.cloneNode(true);
   g.removeAttribute("id");
   g.classList.add("glowStroke");
@@ -79,7 +77,6 @@ function pulseOnce(key, kind="neutral", duration=880){
   g.style.opacity = "0";
   pulseLayer.appendChild(g);
 
-  // Main stroke
   const s = base.cloneNode(true);
   s.removeAttribute("id");
   s.classList.add("pulseStroke");
@@ -107,7 +104,6 @@ function pulseOnce(key, kind="neutral", duration=880){
   return Promise.all([a1.finished.catch(()=>{}), a2.finished.catch(()=>{})]).then(()=>{});
 }
 
-// Scenarios: same structure, different copy + tech
 const scenarios = {
   burger: {
     method: "GET",
@@ -126,7 +122,6 @@ const scenarios = {
       { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa innehållet för dig.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
     ]
   },
-
   uber: {
     method: "POST",
     endpoint: "/rides",
@@ -144,7 +139,6 @@ const scenarios = {
       { focus:"app",    done:true,                        title:"Klart", desc:"Du ser att resan är skapad.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
     ]
   },
-
   login: {
     method: "GET",
     endpoint: "/bookings (Authorization: Bearer …)",
@@ -179,28 +173,19 @@ function buildDots(count){
 
 function renderStep(){
   const sc = scenarios[currentKey];
-  const steps = sc.steps;
+  const total = sc.steps.length;
 
-  // UI state
-  const total = steps.length;
   stepText.textContent = `Steg ${Math.min(step+1,total)}/${total}`;
 
-  // dots
   const dots = Array.from(dotsEl.children);
   dots.forEach((d,i)=> d.classList.toggle("on", i === step));
 
-  // buttons
-  prevBtn.disabled = (step === 0 || busy);
-  nextBtn.disabled = busy;
+  prevBtn.disabled = (step === 0);
 
-  if(step >= total-1){
-    nextBtn.textContent = "Spela igen";
-  } else {
-    nextBtn.textContent = "Nästa";
-  }
+  // ✅ Safari: låt knappen vara aktiv, skydda med busy-check i handlern
+  nextBtn.disabled = false;
 
-  // response visibility
-  showResponse(false);
+  nextBtn.textContent = (step >= total - 1) ? "Spela igen" : "Nästa";
 }
 
 function applyCopy(s){
@@ -226,13 +211,11 @@ async function runCurrentStep(){
   applyCopy(s);
   focusNode(s.focus);
 
-  // If done step: show response card (wow, but clear)
   if(s.done){
     showResponse(true, sc.responseText, sc.responseCode);
     return;
   }
 
-  // One pulse at a time
   if(s.pulse){
     const [pathKey, kind] = s.pulse;
     await pulseOnce(pathKey, kind);
@@ -248,12 +231,10 @@ function resetScenario(){
   const sc = scenarios[currentKey];
   buildDots(sc.steps.length);
 
-  // set initial tech preview
   tMethod.textContent = sc.method;
   tEndpoint.textContent = sc.endpoint;
   tStatus.textContent = "—";
 
-  // set initial copy
   title.textContent = "Välj scenario och tryck Nästa";
   desc.textContent = "En puls i taget visar exakt hur request → response går.";
 
@@ -271,9 +252,11 @@ prevBtn.addEventListener("click", async () => {
   busy = true;
   removePulseStrokes();
   showResponse(false);
+
   step = Math.max(0, step - 1);
   renderStep();
   await runCurrentStep();
+
   busy = false;
   renderStep();
 });
@@ -284,7 +267,6 @@ nextBtn.addEventListener("click", async () => {
   const sc = scenarios[currentKey];
   const total = sc.steps.length;
 
-  // Replay at end
   if(step >= total - 1){
     resetScenario();
     return;
@@ -297,7 +279,6 @@ nextBtn.addEventListener("click", async () => {
   renderStep();
   await runCurrentStep();
 
-  // advance after animation/copy applied
   step = Math.min(total - 1, step + 1);
   renderStep();
 

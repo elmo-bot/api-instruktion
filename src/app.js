@@ -1,90 +1,47 @@
-const stage = document.getElementById("stage");
-const barrier = document.getElementById("barrier");
-const pulseLayer = document.getElementById("pulseLayer");
+const scenarioSel = document.getElementById("scenario");
+const prevBtn = document.getElementById("prev");
+const nextBtn = document.getElementById("next");
 
-const reqSelect = document.getElementById("reqSelect");
-const toggleRun = document.getElementById("toggleRun");
-const speed = document.getElementById("speed");
-const resetBtn = document.getElementById("reset");
-
+const title = document.getElementById("title");
+const desc = document.getElementById("desc");
 const tMethod = document.getElementById("tMethod");
 const tEndpoint = document.getElementById("tEndpoint");
-const tResponse = document.getElementById("tResponse");
+const tStatus = document.getElementById("tStatus");
 
-const nodes = Array.from(document.querySelectorAll(".node"));
+const dotsEl = document.getElementById("dots");
+const stepText = document.getElementById("stepText");
 
+const nApp = document.getElementById("n-app");
+const nApi = document.getElementById("n-api");
+const nServer = document.getElementById("n-server");
+const nDb = document.getElementById("n-db");
+
+const response = document.getElementById("response");
+const respText = document.getElementById("respText");
+const respCode = document.getElementById("respCode");
+
+const pulseLayer = document.getElementById("pulseLayer");
+
+// Geometry paths
 const geom = {
-  "guest->api":  document.getElementById("g-guest-api"),
-  "menu->api":   document.getElementById("g-menu-api"),
+  "app->api": document.getElementById("g-app-api"),
   "api->server": document.getElementById("g-api-server"),
+  "server->db": document.getElementById("g-server-db"),
+  "db->server": document.getElementById("g-db-server"),
   "server->api": document.getElementById("g-server-api"),
-  "api->data":   document.getElementById("g-api-data"),
-  "data->api":   document.getElementById("g-data-api"),
-  "api->guest":  document.getElementById("g-api-guest"),
+  "api->app": document.getElementById("g-api-app"),
 };
-
-let running = false;
-let loopTimer = null;
-let selected = null;
-
-// ====== presets (clean) ======
-const presets = {
-  burger: {
-    method: "GET",
-    endpoint: "/menu/items/42",
-    response: "200 OK",
-    // Chain loop: UI -> API -> Server -> API -> Guest
-    chain: [
-      { focus:"menu",  pulse:"menu->api",   kind:"neutral", twoWay:false },
-      { focus:"api",   pulse:"guest->api",  kind:"neutral", twoWay:false },
-      { focus:"server",pulse:"api->server", kind:"request", twoWay:true, back:"server->api", backKind:"response" },
-      { focus:"data",  pulse:"api->data",   kind:"response",twoWay:true, back:"data->api", backKind:"response" },
-      { focus:"guest", pulse:"api->guest",  kind:"neutral", twoWay:false },
-    ]
-  },
-  uber: {
-    method: "POST",
-    endpoint: "/rides",
-    response: "201 Created",
-    chain: [
-      { focus:"menu",  pulse:"menu->api",   kind:"neutral", twoWay:false },
-      { focus:"api",   pulse:"guest->api",  kind:"neutral", twoWay:false },
-      { focus:"server",pulse:"api->server", kind:"request", twoWay:true, back:"server->api", backKind:"response" },
-      { focus:"guest", pulse:"api->guest",  kind:"response",twoWay:false },
-    ]
-  },
-  login: {
-    method: "GET",
-    endpoint: "/bookings (Authorization: Bearer …)",
-    response: "200 OK",
-    chain: [
-      { focus:"menu",  pulse:"menu->api",   kind:"neutral", twoWay:false },
-      { focus:"api",   pulse:"guest->api",  kind:"neutral", twoWay:false },
-      { focus:"server",pulse:"api->server", kind:"request", twoWay:true, back:"server->api", backKind:"response" },
-      { focus:"data",  pulse:"api->data",   kind:"response",twoWay:true, back:"data->api", backKind:"response" },
-      { focus:"guest", pulse:"api->guest",  kind:"response",twoWay:false },
-    ]
-  }
-};
-
-function applyTech(key){
-  const p = presets[key];
-  tMethod.textContent = p.method;
-  tEndpoint.textContent = p.endpoint;
-  tResponse.textContent = p.response;
-}
 
 function clearActive(){
-  nodes.forEach(n => n.classList.remove("active"));
+  [nApp,nApi,nServer,nDb].forEach(n=>n.classList.remove("active"));
 }
-function activate(nodeKey){
-  clearActive();
-  const el = nodes.find(n => n.dataset.node === nodeKey);
-  if(el) el.classList.add("active");
-  selected = nodeKey;
+function showResponse(show, text="200 OK", code="200"){
+  response.classList.toggle("show", show);
+  response.setAttribute("aria-hidden", show ? "false" : "true");
+  respText.textContent = text;
+  respCode.textContent = code;
 }
 
-// ====== Pulse engine (stable) ======
 function removePulseStrokes(){
   pulseLayer.querySelectorAll(".pulseStroke, .glowStroke").forEach(e => e.remove());
 }
@@ -95,7 +52,8 @@ function colors(kind){
   return { main:"rgba(124,92,255,.95)", glow:"rgba(124,92,255,.42)" };
 }
 
-function pulseOnce(key, kind="neutral", baseMs=900){
+// One pulse, always the same behavior (no “modes”)
+function pulseOnce(key, kind="neutral", duration=880){
   const base = geom[key];
   if(!base) return Promise.resolve();
 
@@ -103,11 +61,11 @@ function pulseOnce(key, kind="neutral", baseMs=900){
 
   const { main, glow } = colors(kind);
   const len = base.getTotalLength();
-  const dashA = Math.max(10, len * 0.18);
+
+  const dashA = Math.max(10, len * 0.20);
   const dashB = len;
 
-  const dur = Math.round(baseMs / Number(speed.value));
-
+  // Glow stroke
   const g = base.cloneNode(true);
   g.removeAttribute("id");
   g.classList.add("glowStroke");
@@ -115,12 +73,13 @@ function pulseOnce(key, kind="neutral", baseMs=900){
   g.style.stroke = glow;
   g.style.strokeWidth = "3.4";
   g.style.strokeLinecap = "round";
-  g.style.filter = "url(#softGlow)";
+  g.style.filter = "url(#glow)";
   g.style.strokeDasharray = `${dashA} ${dashB}`;
   g.style.strokeDashoffset = `${len}`;
   g.style.opacity = "0";
   pulseLayer.appendChild(g);
 
+  // Main stroke
   const s = base.cloneNode(true);
   s.removeAttribute("id");
   s.classList.add("pulseStroke");
@@ -135,140 +94,216 @@ function pulseOnce(key, kind="neutral", baseMs=900){
 
   const a1 = g.animate([
     { strokeDashoffset: len, opacity: 0 },
-    { strokeDashoffset: len * 0.85, opacity: 0.85 },
+    { strokeDashoffset: len * 0.84, opacity: 0.85 },
     { strokeDashoffset: 0, opacity: 0 }
-  ], { duration: dur + 140, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
+  ], { duration: duration + 140, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
 
   const a2 = s.animate([
     { strokeDashoffset: len, opacity: 0 },
-    { strokeDashoffset: len * 0.9, opacity: 1 },
+    { strokeDashoffset: len * 0.90, opacity: 1 },
     { strokeDashoffset: 0, opacity: 0 }
-  ], { duration: dur, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
+  ], { duration, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
 
   return Promise.all([a1.finished.catch(()=>{}), a2.finished.catch(()=>{})]).then(()=>{});
 }
 
-// ====== Chains ======
-async function playStep(step){
-  activate(step.focus);
+// Scenarios: same structure, different copy + tech
+const scenarios = {
+  burger: {
+    method: "GET",
+    endpoint: "/menu/items/42",
+    status: "200 OK",
+    responseText: "200 OK • { item: … }",
+    responseCode: "200",
+    steps: [
+      { focus:"app",    title:"Du väljer något i appen", desc:"(metafor) du beställer via menyn.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
+      { focus:"app",    pulse:["app->api","neutral"],     title:"Appen skickar en förfrågan", desc:"API tar emot din request.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
+      { focus:"api",    pulse:["api->server","request"],  title:"API skickar vidare", desc:"Request skickas till servern.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
+      { focus:"server", pulse:["server->db","request"],   title:"Servern hämtar data", desc:"Servern frågar databasen.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
+      { focus:"db",     pulse:["db->server","response"],  title:"Databasen svarar", desc:"Data går tillbaka till servern.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Servern skickar svaret tillbaka.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får svaret den bad om.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa innehållet för dig.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+    ]
+  },
 
-  // Barrier only during server communication (fixes red vertical line bug)
-  const showBarrier = (step.focus === "server") || (step.pulse.includes("server"));
-  barrier.classList.toggle("show", showBarrier);
+  uber: {
+    method: "POST",
+    endpoint: "/rides",
+    status: "201 Created",
+    responseText: "201 Created • { rideId: … }",
+    responseCode: "201",
+    steps: [
+      { focus:"app",    title:"Du beställer en resa", desc:"(metafor) du säger vad du vill ha.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Din beställning blir en request.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern tar emot och jobbar.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"server", pulse:["server->db","request"],   title:"Servern sparar / matchar", desc:"Data skrivs/uppdateras.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Resultat tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svaret skickas tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen kan visa bekräftelse.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+      { focus:"app",    done:true,                        title:"Klart", desc:"Du ser att resan är skapad.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+    ]
+  },
 
-  // Forward
-  await pulseOnce(step.pulse, step.kind);
+  login: {
+    method: "GET",
+    endpoint: "/bookings (Authorization: Bearer …)",
+    status: "200 OK",
+    responseText: "200 OK • [ … ]",
+    responseCode: "200",
+    steps: [
+      { focus:"app",    title:"Du vill se dina bokningar", desc:"(tekniskt) requesten behöver auth.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Request skickas med token.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern verifierar behörighet.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Servern hämtar bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Bokningar returneras.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
+      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svaret går tillbaka.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
+      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får listan.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
+      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa dina bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
+    ]
+  }
+};
 
-  // Optional return pulse (two-way)
-  if(step.twoWay && step.back){
-    await pulseOnce(step.back, step.backKind || "response");
+let currentKey = scenarioSel.value;
+let step = 0;
+let busy = false;
+
+function buildDots(count){
+  dotsEl.innerHTML = "";
+  for(let i=0;i<count;i++){
+    const d = document.createElement("div");
+    d.className = "dot";
+    dotsEl.appendChild(d);
   }
 }
 
-async function runLoop(){
-  const p = presets[reqSelect.value];
-  if(!p) return;
+function renderStep(){
+  const sc = scenarios[currentKey];
+  const steps = sc.steps;
 
-  applyTech(reqSelect.value);
+  // UI state
+  const total = steps.length;
+  stepText.textContent = `Steg ${Math.min(step+1,total)}/${total}`;
 
-  running = true;
-  toggleRun.textContent = "Stop";
+  // dots
+  const dots = Array.from(dotsEl.children);
+  dots.forEach((d,i)=> d.classList.toggle("on", i === step));
 
-  // Continous loop: runs forever until Stop
-  while(running){
-    for(const step of p.chain){
-      if(!running) break;
-      await playStep(step);
-      // tiny rest for “breathing room”
-      await new Promise(r => setTimeout(r, Math.round(140 / Number(speed.value))));
-    }
+  // buttons
+  prevBtn.disabled = (step === 0 || busy);
+  nextBtn.disabled = busy;
+
+  if(step >= total-1){
+    nextBtn.textContent = "Spela igen";
+  } else {
+    nextBtn.textContent = "Nästa";
   }
+
+  // response visibility
+  showResponse(false);
 }
 
-function stopLoop(){
-  running = false;
-  toggleRun.textContent = "Start";
-  barrier.classList.remove("show");
-  removePulseStrokes();
-  if(loopTimer){ clearTimeout(loopTimer); loopTimer = null; }
+function applyCopy(s){
+  title.textContent = s.title;
+  desc.textContent = s.desc;
+  tMethod.textContent = s.tech?.method ?? "—";
+  tEndpoint.textContent = s.tech?.endpoint ?? "—";
+  tStatus.textContent = s.tech?.status ?? "—";
 }
 
-// ====== Node click behaviour (continuous local loop) ======
-async function nodeLoop(nodeKey){
-  // Stop any global loop first
-  stopLoop();
-
-  // clean activation
-  activate(nodeKey);
-
-  // Define “correct” direction + two-way rules per node
-  // Guest/Menu: one-way to API (repeat)
-  // API: two-way to Server then to Data (repeat)
-  // Server/Data: two-way with API (repeat)
-  const delay = () => new Promise(r => setTimeout(r, Math.round(180 / Number(speed.value))));
-
-  running = true;
-  toggleRun.textContent = "Stop";
-
-  while(running){
-    if(nodeKey === "guest"){
-      barrier.classList.remove("show");
-      await pulseOnce("guest->api","neutral");
-      await delay();
-    } else if(nodeKey === "menu"){
-      barrier.classList.remove("show");
-      await pulseOnce("menu->api","neutral");
-      await delay();
-    } else if(nodeKey === "api"){
-      barrier.classList.add("show");
-      await pulseOnce("api->server","request");
-      await pulseOnce("server->api","response");
-      await delay();
-      await pulseOnce("api->data","response");
-      await pulseOnce("data->api","response");
-      await delay();
-    } else if(nodeKey === "server"){
-      barrier.classList.add("show");
-      await pulseOnce("api->server","request");
-      await pulseOnce("server->api","response");
-      await delay();
-    } else if(nodeKey === "data"){
-      barrier.classList.remove("show");
-      await pulseOnce("api->data","response");
-      await pulseOnce("data->api","response");
-      await delay();
-    } else {
-      await delay();
-    }
-  }
+function focusNode(key){
+  clearActive();
+  if(key === "app") nApp.classList.add("active");
+  if(key === "api") nApi.classList.add("active");
+  if(key === "server") nServer.classList.add("active");
+  if(key === "db") nDb.classList.add("active");
 }
 
-// ====== UI events ======
-toggleRun.addEventListener("click", () => {
-  if(running){
-    stopLoop();
+async function runCurrentStep(){
+  const sc = scenarios[currentKey];
+  const s = sc.steps[step];
+
+  applyCopy(s);
+  focusNode(s.focus);
+
+  // If done step: show response card (wow, but clear)
+  if(s.done){
+    showResponse(true, sc.responseText, sc.responseCode);
     return;
   }
-  runLoop();
-});
 
-resetBtn.addEventListener("click", () => {
-  stopLoop();
+  // One pulse at a time
+  if(s.pulse){
+    const [pathKey, kind] = s.pulse;
+    await pulseOnce(pathKey, kind);
+  }
+}
+
+function resetScenario(){
+  busy = false;
+  removePulseStrokes();
+  showResponse(false);
+  step = 0;
+
+  const sc = scenarios[currentKey];
+  buildDots(sc.steps.length);
+
+  // set initial tech preview
+  tMethod.textContent = sc.method;
+  tEndpoint.textContent = sc.endpoint;
+  tStatus.textContent = "—";
+
+  // set initial copy
+  title.textContent = "Välj scenario och tryck Nästa";
+  desc.textContent = "En puls i taget visar exakt hur request → response går.";
+
   clearActive();
-  selected = null;
-  applyTech(reqSelect.value);
+  renderStep();
+}
+
+scenarioSel.addEventListener("change", () => {
+  currentKey = scenarioSel.value;
+  resetScenario();
 });
 
-reqSelect.addEventListener("change", () => {
-  stopLoop();
-  applyTech(reqSelect.value);
+prevBtn.addEventListener("click", async () => {
+  if(busy || step === 0) return;
+  busy = true;
+  removePulseStrokes();
+  showResponse(false);
+  step = Math.max(0, step - 1);
+  renderStep();
+  await runCurrentStep();
+  busy = false;
+  renderStep();
 });
 
-nodes.forEach(n => {
-  n.addEventListener("click", () => {
-    nodeLoop(n.dataset.node);
-  });
+nextBtn.addEventListener("click", async () => {
+  if(busy) return;
+
+  const sc = scenarios[currentKey];
+  const total = sc.steps.length;
+
+  // Replay at end
+  if(step >= total - 1){
+    resetScenario();
+    return;
+  }
+
+  busy = true;
+  removePulseStrokes();
+  showResponse(false);
+
+  renderStep();
+  await runCurrentStep();
+
+  // advance after animation/copy applied
+  step = Math.min(total - 1, step + 1);
+  renderStep();
+
+  busy = false;
+  renderStep();
 });
 
-// Init
-applyTech(reqSelect.value);
+// init
+resetScenario();

@@ -3,105 +3,109 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>API – Interaktiv förklaring</title>
+  <title>API – Interaktiv demo</title>
   <link rel="stylesheet" href="src/styles.css" />
 </head>
 <body>
-  <main class="app" id="app" aria-label="Interaktiv API-förklaring">
+  <main class="app" id="app">
 
-    <header class="header">
+    <header class="top">
       <div class="brand">
         <img src="assets/loggatransparant.png" alt="Företagslogga" />
       </div>
 
       <div class="controls">
-        <select id="reqSelect" class="select" aria-label="Välj förfrågan">
-          <option value="burger">Hamburgare • GET /menu/items/42</option>
-          <option value="uber">Beställ resa • POST /rides</option>
-          <option value="login">Bokningar • GET /bookings (auth)</option>
+        <select id="scenario" class="select" aria-label="Scenario">
+          <option value="burger">Hamburgare (GET /menu/items/42)</option>
+          <option value="uber">Beställ resa (POST /rides)</option>
+          <option value="login">Bokningar (GET /bookings, auth)</option>
         </select>
 
-        <button class="btn primary" id="toggleRun">Start</button>
-
-        <div class="speed">
-          <span>Tempo</span>
-          <input id="speed" type="range" min="0.7" max="1.6" step="0.1" value="1.0" />
-        </div>
-
-        <button class="btn" id="reset">Reset</button>
+        <button id="prev" class="btn" type="button" aria-label="Föregående">←</button>
+        <button id="next" class="btn primary" type="button">Nästa</button>
       </div>
     </header>
 
-    <section class="scene" aria-label="Scen">
-      <div class="stage" id="stage">
+    <section class="hero">
+      <div class="copy">
+        <div class="kicker">API • interaktiv förklaring</div>
+        <h1 id="title">Välj scenario och tryck Nästa</h1>
+        <p id="desc">En puls i taget visar exakt hur request → response går.</p>
 
-        <!-- Puls-layer -->
-        <svg class="pulseLayer" id="pulseLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <filter id="softGlow">
-              <feGaussianBlur stdDeviation="1.1" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-
-          <!-- Baslinjer (svagt) -->
-          <path class="wire" d="M20 26 C38 26 44 38 50 42" />
-          <path class="wire" d="M20 68 C38 68 44 54 50 50" />
-          <path class="wire" d="M50 42 C58 42 64 26 80 26" />
-          <path class="wire" d="M50 50 C58 50 64 68 80 68" />
-
-          <!-- Geometri (osynlig, används för pulser) -->
-          <path class="geom" id="g-guest-api"  d="M20 26 C38 26 44 38 50 42" />
-          <path class="geom" id="g-menu-api"   d="M20 68 C38 68 44 54 50 50" />
-          <path class="geom" id="g-api-server" d="M50 42 C58 42 64 26 80 26" />
-          <path class="geom" id="g-server-api" d="M80 26 C64 26 58 42 50 42" />
-          <path class="geom" id="g-api-data"   d="M50 50 C58 50 64 68 80 68" />
-          <path class="geom" id="g-data-api"   d="M80 68 C64 68 58 50 50 50" />
-          <path class="geom" id="g-api-guest"  d="M50 42 C44 38 38 26 20 26" />
-        </svg>
-
-        <!-- Diskret barrier (visas bara under server-interaktion) -->
-        <div class="barrier" id="barrier" aria-hidden="true">
-          <div class="barline"></div>
+        <div class="tech">
+          <div class="kv"><span>Method</span><b id="tMethod">—</b></div>
+          <div class="kv"><span>Endpoint</span><b id="tEndpoint">—</b></div>
+          <div class="kv"><span>Status</span><b id="tStatus">—</b></div>
         </div>
 
-        <!-- Noder -->
-        <button class="node" data-node="guest" type="button">
-          <div class="nodeTitle">Gästen</div>
-          <div class="nodeSub">Input</div>
-        </button>
+        <div class="progress" aria-label="Progress">
+          <div class="dots" id="dots"></div>
+          <div class="stepText" id="stepText">Steg 1/1</div>
+        </div>
+      </div>
 
-        <button class="node" data-node="menu" type="button">
-          <div class="nodeTitle">Meny</div>
-          <div class="nodeSub">UI</div>
-        </button>
+      <div class="scene" aria-label="Scen">
+        <div class="stage" id="stage">
+          <!-- Puls-layer -->
+          <svg class="pulseLayer" id="pulseLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="1.2" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
 
-        <button class="node wide" data-node="api" type="button">
-          <div class="nodeTitle">API</div>
-          <div class="nodeSub">Mellanhand</div>
-        </button>
+            <!-- Baslinjer (svagt) -->
+            <path class="wire" d="M18 40 C33 40 40 50 50 50" />
+            <path class="wire" d="M50 50 C60 50 67 40 82 40" />
+            <path class="wire" d="M82 40 C86 52 86 66 78 78" />
+            <path class="wire" d="M78 78 C64 84 60 76 52 66" />
 
-        <button class="node" data-node="server" type="button">
-          <div class="nodeTitle">Server</div>
-          <div class="nodeSub">Backend</div>
-        </button>
+            <!-- Geometri (osynlig, används för pulser) -->
+            <path class="geom" id="g-app-api"     d="M18 40 C33 40 40 50 50 50" />
+            <path class="geom" id="g-api-server"  d="M50 50 C60 50 67 40 82 40" />
+            <path class="geom" id="g-server-db"   d="M82 40 C86 52 86 66 78 78" />
+            <path class="geom" id="g-db-server"   d="M78 78 C86 66 86 52 82 40" />
+            <path class="geom" id="g-server-api"  d="M82 40 C67 40 60 50 50 50" />
+            <path class="geom" id="g-api-app"     d="M50 50 C40 50 33 40 18 40" />
+          </svg>
 
-        <button class="node" data-node="data" type="button">
-          <div class="nodeTitle">Svar</div>
-          <div class="nodeSub">Data</div>
-        </button>
+          <!-- Noder -->
+          <div class="node appNode" id="n-app">
+            <div class="nodeTitle">App</div>
+            <div class="nodeSub">Gäst + Meny</div>
+          </div>
 
+          <div class="node apiNode" id="n-api">
+            <div class="nodeTitle">API</div>
+            <div class="nodeSub">Mellanhand</div>
+          </div>
+
+          <div class="node serverNode" id="n-server">
+            <div class="nodeTitle">Server</div>
+            <div class="nodeSub">Backend</div>
+          </div>
+
+          <div class="node dbNode" id="n-db">
+            <div class="nodeTitle">Databas</div>
+            <div class="nodeSub">Data</div>
+          </div>
+
+          <!-- Response card (visas i slutet) -->
+          <div class="response" id="response" aria-hidden="true">
+            <div class="respDot"></div>
+            <div>
+              <div class="respTitle">Svar</div>
+              <div class="respText" id="respText">200 OK</div>
+            </div>
+            <div class="respCode" id="respCode">200</div>
+          </div>
+        </div>
       </div>
     </section>
-
-    <footer class="tech">
-      <div class="kv"><span>Method</span><b id="tMethod">GET</b></div>
-      <div class="kv"><span>Endpoint</span><b id="tEndpoint">/menu/items/42</b></div>
-      <div class="kv"><span>Result</span><b id="tResponse">200 OK</b></div>
-    </footer>
 
   </main>
 

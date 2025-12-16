@@ -3,27 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>API – restaurangmetaforen (Reel)</title>
+  <title>API – restaurangmetaforen (Reel Slides)</title>
   <style>
     :root{
       --bg0:#070A14;
       --bg1:#0B1026;
-      --panel:#0F1735cc;
-      --panel2:#0A1024b8;
-      --stroke:rgba(255,255,255,.10);
-      --stroke2:rgba(255,255,255,.14);
-      --text:rgba(245,247,255,.92);
-      --muted:rgba(245,247,255,.70);
-      --faint:rgba(245,247,255,.52);
+
+      --panel: rgba(16, 24, 52, .62);
+      --panel2: rgba(12, 18, 40, .52);
+      --stroke: rgba(255,255,255,.11);
+      --stroke2: rgba(255,255,255,.16);
+
+      --text: rgba(245,247,255,.92);
+      --muted: rgba(245,247,255,.70);
+      --faint: rgba(245,247,255,.50);
 
       --a:#7C5CFF;   /* accent */
       --g:#38D17A;   /* success */
       --y:#FFCC66;   /* warn */
       --r:#FF5C7A;   /* danger */
 
-      --shadow: 0 18px 70px rgba(0,0,0,.45);
-      --shadow2: 0 10px 32px rgba(0,0,0,.35);
-      --radius: 26px;
+      --shadow: 0 18px 70px rgba(0,0,0,.48);
+      --shadow2: 0 10px 34px rgba(0,0,0,.36);
+
+      --radius: 28px;
+
+      --ease: cubic-bezier(.18,.92,.22,1);
     }
 
     *{box-sizing:border-box}
@@ -31,41 +36,50 @@
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--text);
+      color: var(--text);
       background:
         radial-gradient(1200px 800px at 18% 0%, rgba(124,92,255,.20), transparent 60%),
-        radial-gradient(1200px 800px at 88% 8%, rgba(56,209,122,.12), transparent 55%),
-        radial-gradient(900px 700px at 56% 100%, rgba(255,92,122,.10), transparent 55%),
+        radial-gradient(1200px 800px at 88% 10%, rgba(56,209,122,.12), transparent 55%),
+        radial-gradient(900px 700px at 55% 100%, rgba(255,92,122,.10), transparent 55%),
         linear-gradient(180deg, var(--bg1), var(--bg0));
       display:grid;
       place-items:center;
       padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+      -webkit-tap-highlight-color: transparent;
     }
 
+    /* Reel canvas (9:16) */
     .reel{
-      width:min(440px, 100%);
-      aspect-ratio: 9/16;
+      width:min(460px, 100%);
+      aspect-ratio: 9 / 16;
       border-radius: var(--radius);
-      border:1px solid var(--stroke);
+      border: 1px solid var(--stroke);
       background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
       box-shadow: var(--shadow);
       overflow:hidden;
       position:relative;
       user-select:none;
-      -webkit-tap-highlight-color: transparent;
     }
 
-    /* Subtle grain */
+    /* subtle grain & glow */
     .reel::before{
       content:"";
-      position:absolute; inset:0;
-      background-image:
-        radial-gradient(circle at 20% 20%, rgba(255,255,255,.06), transparent 35%),
-        radial-gradient(circle at 85% 12%, rgba(255,255,255,.05), transparent 34%),
-        radial-gradient(circle at 55% 88%, rgba(255,255,255,.05), transparent 38%);
+      position:absolute; inset:-40px;
+      background:
+        radial-gradient(600px 360px at 20% 10%, rgba(124,92,255,.20), transparent 60%),
+        radial-gradient(540px 320px at 85% 18%, rgba(56,209,122,.14), transparent 62%),
+        radial-gradient(640px 420px at 55% 92%, rgba(255,92,122,.10), transparent 62%);
+      filter: blur(18px);
+      opacity:.85;
       pointer-events:none;
-      opacity:.65;
+    }
+    .reel::after{
+      content:"";
+      position:absolute; inset:0;
+      background: radial-gradient(1200px 900px at 50% 40%, rgba(255,255,255,.03), transparent 55%);
+      pointer-events:none;
       mix-blend-mode: screen;
+      opacity:.6;
     }
 
     header{
@@ -75,37 +89,36 @@
       align-items:flex-start;
       justify-content:space-between;
       gap:12px;
-      z-index:3;
+      z-index:4;
     }
-
     .badge{
       display:inline-flex;
       align-items:center;
       gap:8px;
       padding: 8px 10px;
-      border: 1px solid var(--stroke);
-      background: rgba(15,23,53,.55);
       border-radius: 999px;
-      font-weight: 750;
+      border: 1px solid var(--stroke);
+      background: rgba(16,24,52,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow2);
+      font-weight: 800;
       font-size: 12px;
       color: var(--muted);
-      backdrop-filter: blur(8px);
-      box-shadow: var(--shadow2);
+      letter-spacing: .2px;
     }
-
     .title{
       margin: 10px 0 0;
-      font-size: 19px;
-      line-height:1.12;
-      letter-spacing:-.25px;
-      font-weight: 850;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      font-size: 19.5px;
+      line-height: 1.12;
     }
     .subtitle{
       margin: 7px 0 0;
       font-size: 12.8px;
-      line-height:1.35;
+      line-height: 1.35;
       color: var(--muted);
-      max-width: 260px;
+      max-width: 270px;
     }
 
     .actions{
@@ -114,84 +127,112 @@
       align-items:center;
       padding-top:2px;
     }
-
     .btn{
       border:1px solid var(--stroke);
-      background: rgba(15,23,53,.55);
+      background: rgba(16,24,52,.55);
       color: var(--text);
-      font-weight: 800;
+      font-weight: 850;
       font-size: 12.5px;
       padding: 10px 11px;
       border-radius: 999px;
       box-shadow: var(--shadow2);
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
       cursor:pointer;
-      transition: transform .12s ease, filter .12s ease, background .12s ease;
+      transition: transform .12s ease, filter .12s ease;
     }
     .btn:hover{ transform: translateY(-1px); filter: brightness(1.05); }
     .btn.primary{
-      border-color: rgba(124,92,255,.35);
-      background: linear-gradient(180deg, rgba(124,92,255,.92), rgba(124,92,255,.72));
+      border-color: rgba(124,92,255,.32);
+      background: linear-gradient(180deg, rgba(124,92,255,.92), rgba(124,92,255,.70));
     }
 
-    /* Scene */
+    /* Film mode (hide header controls + subtitle) */
+    .film header .actions,
+    .film header .subtitle{ display:none; }
+    .film header{ justify-content:flex-start; }
+
+    /* Scene area */
     .scene{
       position:absolute;
       left: 14px; right: 14px;
-      top: 96px;
-      height: 60%;
-      border-radius: 22px;
+      top: 98px;
+      height: 62%;
+      border-radius: 24px;
       border: 1px solid var(--stroke);
       background:
-        radial-gradient(900px 280px at 30% 0%, rgba(124,92,255,.16), transparent 70%),
-        radial-gradient(750px 260px at 85% 0%, rgba(56,209,122,.12), transparent 68%),
-        linear-gradient(180deg, rgba(10,16,36,.65), rgba(6,8,18,.52));
+        linear-gradient(180deg, rgba(10,16,36,.70), rgba(6,8,18,.56));
       box-shadow: var(--shadow2);
       overflow:hidden;
-      z-index:1;
+      z-index:2;
     }
 
     .stage{
       position:absolute;
       inset: 12px;
-      border-radius: 18px;
+      border-radius: 20px;
       border: 1px dashed rgba(255,255,255,.10);
-      background: rgba(10,16,36,.25);
+      background: rgba(10,16,36,.22);
       overflow:hidden;
     }
 
-    .node{
+    /* Slides */
+    .slide{
       position:absolute;
-      width: 46%;
-      padding: 11px 11px 10px;
-      border-radius: 18px;
-      border: 1px solid var(--stroke2);
-      background: rgba(15,23,53,.55);
-      box-shadow: var(--shadow2);
-      backdrop-filter: blur(10px);
+      inset:0;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .55s var(--ease);
+    }
+    .slide.active{
+      opacity:1;
+      pointer-events:auto;
     }
 
-    .nodeHead{
+    /* Layout elements for slides */
+    .grid2{
+      position:absolute;
+      inset: 18px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 12px;
+    }
+
+    .card{
+      border-radius: 20px;
+      border: 1px solid var(--stroke2);
+      background: rgba(16,24,52,.55);
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(12px);
+      padding: 12px 12px 11px;
+      transform: translateY(10px);
+      opacity:0;
+    }
+
+    /* “appear” animation (synk via JS genom att lägga class) */
+    .card.show{
+      animation: popIn .55s var(--ease) forwards;
+    }
+    @keyframes popIn{
+      from{ opacity:0; transform: translateY(12px) scale(.985); }
+      to  { opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    .cardHead{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
+      margin-bottom: 8px;
     }
-    .nodeTitle{
+    .cardTitle{
       display:flex;
       align-items:center;
-      gap:9px;
-      font-weight: 900;
+      gap:10px;
+      font-weight: 950;
       letter-spacing:-.2px;
-      font-size: 13px;
+      font-size: 14px;
     }
-    .nodeMeta{
-      margin-top:7px;
-      font-size: 11.7px;
-      line-height:1.3;
-      color: var(--muted);
-    }
-
     .chip{
       font-size: 10.5px;
       padding: 5px 8px;
@@ -201,84 +242,175 @@
       background: rgba(255,255,255,.05);
       white-space:nowrap;
     }
-    .chip.a{ border-color: rgba(124,92,255,.28); background: rgba(124,92,255,.12); }
     .chip.g{ border-color: rgba(56,209,122,.26); background: rgba(56,209,122,.10); }
-    .chip.y{ border-color: rgba(255,204,102,.28); background: rgba(255,204,102,.10); }
-    .chip.r{ border-color: rgba(255,92,122,.28); background: rgba(255,92,122,.10); }
+    .chip.a{ border-color: rgba(124,92,255,.26); background: rgba(124,92,255,.10); }
+    .chip.y{ border-color: rgba(255,204,102,.26); background: rgba(255,204,102,.10); }
+    .chip.r{ border-color: rgba(255,92,122,.26); background: rgba(255,92,122,.10); }
 
-    .guest{ left: 12px; top: 12px; }
-    .menu { left: 12px; top: 46%; }
-    .api  { left: 50%; transform: translateX(-50%); top: 28%; width: 52%; }
-    .server{ right: 12px; top: 12px; }
-    .data { right: 12px; top: 46%; }
+    .cardBody{
+      color: var(--muted);
+      font-size: 12.2px;
+      line-height: 1.35;
+    }
 
-    /* Barrier */
+    /* Icons */
+    .ico{ width:20px; height:20px; display:block; }
+    .ico path, .ico circle, .ico rect, .ico line { vector-effect: non-scaling-stroke; }
+
+    /* Focus ring for current object */
+    .focusRing{
+      position:absolute;
+      inset: 18px;
+      border-radius: 22px;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .35s ease, transform .35s var(--ease);
+      transform: scale(.99);
+    }
+    .focusRing.show{
+      opacity:1;
+      transform: scale(1);
+    }
+    .ring{
+      position:absolute;
+      border-radius: 22px;
+      border: 1px solid rgba(124,92,255,.35);
+      box-shadow: 0 0 0 6px rgba(124,92,255,.10), 0 20px 70px rgba(124,92,255,.12);
+      inset: 0;
+    }
+
+    /* Bottom text / captions */
+    .bottom{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      padding: 14px 14px 16px;
+      background: linear-gradient(180deg, rgba(7,10,20,0), rgba(7,10,20,.72), rgba(7,10,20,.92));
+      z-index:3;
+    }
+    .caption{
+      border-radius: 20px;
+      border: 1px solid var(--stroke);
+      background: rgba(10,16,36,.58);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow2);
+      padding: 12px 13px;
+      min-height: 72px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap: 6px;
+      opacity:0;
+      transform: translateY(8px);
+    }
+    .caption.show{
+      animation: captionIn .55s var(--ease) forwards;
+    }
+    @keyframes captionIn{
+      to{ opacity:1; transform: translateY(0); }
+    }
+    .capTitle{
+      font-weight: 950;
+      letter-spacing:-.2px;
+      font-size: 13.5px;
+      color: rgba(245,247,255,.96);
+    }
+    .capText{
+      font-size: 12.8px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    /* Flow line + barrier (slide 3) */
+    .barrierWrap{
+      position:absolute;
+      inset: 18px;
+      pointer-events:none;
+      opacity:0;
+      transform: translateY(6px);
+    }
+    .barrierWrap.show{
+      animation: fadeUp .55s var(--ease) forwards;
+    }
+    @keyframes fadeUp{ to{ opacity:1; transform: translateY(0); } }
+
     .barrier{
       position:absolute;
-      right: 50%;
+      left: 50%;
       top: 10px;
       height: calc(100% - 20px);
       width: 10px;
       border-radius: 999px;
-      background: linear-gradient(180deg, rgba(255,92,122,0), rgba(255,92,122,.46), rgba(255,92,122,0));
-      box-shadow: 0 0 0 7px rgba(255,92,122,.08);
+      background: linear-gradient(180deg, rgba(255,92,122,0), rgba(255,92,122,.50), rgba(255,92,122,0));
+      box-shadow: 0 0 0 7px rgba(255,92,122,.09);
       transform: translateX(16px);
-      opacity:.95;
+      opacity:.98;
     }
     .barrierLabel{
       position:absolute;
-      right: 50%;
+      left: 50%;
       top: 10px;
-      transform: translateX(6px);
+      transform: translateX(26px);
       padding: 7px 10px;
       border-radius: 999px;
       border: 1px solid var(--stroke);
-      background: rgba(10,16,36,.55);
-      font-size: 11.2px;
+      background: rgba(10,16,36,.58);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow2);
+      font-size: 11.6px;
       color: var(--muted);
-      backdrop-filter: blur(8px);
+      white-space:nowrap;
     }
 
-    /* Request card */
+    /* Request/Response “packet” animation (slide 4) */
     .packet{
       position:absolute;
-      left: 18%;
-      top: 18%;
-      width: 62%;
-      max-width: 250px;
+      left: 16%;
+      top: 40%;
+      width: 68%;
+      max-width: 300px;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,.16);
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       box-shadow: var(--shadow2);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
       padding: 10px 12px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      transform: translateX(0);
-      transition: transform .90s cubic-bezier(.18,.92,.25,1);
+      opacity:0;
+      transform: translateX(0) scale(.99);
+      pointer-events:none;
+    }
+    .packet.show{
+      animation: popIn .55s var(--ease) forwards;
     }
     .packetLeft{
       display:flex;
       align-items:center;
       gap:10px;
-      min-width: 0;
+      min-width:0;
     }
-    .packetTitle{
+    .dot{
+      width:10px; height:10px;
+      border-radius:999px;
+      background: rgba(56,209,122,.95);
+      box-shadow: 0 0 0 6px rgba(56,209,122,.10);
+    }
+    .pktTitle{
       font-weight: 950;
       letter-spacing:-.2px;
       font-size: 13px;
       white-space:nowrap;
     }
-    .packetSub{
+    .pktSub{
       font-size: 11.5px;
       color: var(--muted);
       margin-top:3px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      max-width: 165px;
+      max-width: 175px;
     }
     .pill{
       font-size: 10.5px;
@@ -287,35 +419,20 @@
       border: 1px solid rgba(124,92,255,.32);
       background: rgba(124,92,255,.14);
       color: rgba(245,247,255,.88);
-      font-weight: 850;
+      font-weight: 900;
       white-space:nowrap;
     }
 
-    .toApi{ transform: translateX(24%); }
-    .toServer{ transform: translateX(48%); }
-    .toGuest{ transform: translateX(0); }
-
-    /* Step text */
-    .bottom{
-      position:absolute;
-      left:0; right:0; bottom:0;
-      padding: 14px 14px 16px;
-      background: linear-gradient(180deg, rgba(7,10,20,0), rgba(7,10,20,.72), rgba(7,10,20,.90));
-      z-index:2;
+    /* packet travel states */
+    .pktGuest{ transform: translateX(-2%) scale(.99); }
+    .pktApi{ transform: translateX(10%) scale(1); }
+    .pktServer{ transform: translateX(22%) scale(1); }
+    .pktBack{ transform: translateX(6%) scale(1); }
+    .pktDone{ transform: translateX(-2%) scale(.99); }
+    .packet.move{
+      transition: transform .85s var(--ease), opacity .25s ease;
+      opacity:1;
     }
-    .stepBox{
-      border-radius: 18px;
-      border: 1px solid var(--stroke);
-      background: rgba(10,16,36,.55);
-      backdrop-filter: blur(10px);
-      box-shadow: var(--shadow2);
-      padding: 12px 13px;
-      font-size: 13.2px;
-      line-height:1.35;
-      color: rgba(245,247,255,.90);
-      min-height: 64px;
-    }
-    .stepBox strong{ color: rgba(245,247,255,.98); }
 
     /* Countdown overlay */
     .overlay{
@@ -324,8 +441,8 @@
       place-items:center;
       background: radial-gradient(800px 500px at 50% 40%, rgba(124,92,255,.20), transparent 60%),
                   rgba(7,10,20,.55);
-      backdrop-filter: blur(10px);
-      z-index:4;
+      backdrop-filter: blur(12px);
+      z-index:10;
       opacity:0;
       pointer-events:none;
       transition: opacity .25s ease;
@@ -353,20 +470,12 @@
       line-height:1.35;
     }
 
-    /* Film mode: hide header UI (clean recording) */
-    .film header .actions{ display:none; }
-    .film header .subtitle{ display:none; }
-
-    /* Tiny SVG icons */
-    .ico{ width:18px; height:18px; display:block; }
-    .ico path, .ico circle, .ico rect, .ico line{ vector-effect: non-scaling-stroke; }
-
-    /* Tap hint (first run) */
+    /* Tap hint */
     .tapHint{
       position:absolute;
       left: 14px; right: 14px;
       top: 106px;
-      z-index:3;
+      z-index:6;
       display:flex;
       justify-content:center;
       pointer-events:none;
@@ -382,10 +491,10 @@
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(10,16,36,.55);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
       box-shadow: var(--shadow2);
       color: rgba(245,247,255,.86);
-      font-weight: 850;
+      font-weight: 900;
       font-size: 12.5px;
     }
     .dotPulse{
@@ -398,15 +507,37 @@
       0%{ box-shadow: 0 0 0 0 rgba(124,92,255,.35); }
       100%{ box-shadow: 0 0 0 14px rgba(124,92,255,0); }
     }
+
+    /* Small “progress” dots */
+    .prog{
+      position:absolute;
+      left: 16px;
+      top: 64px;
+      display:flex;
+      gap:6px;
+      z-index:5;
+      opacity:.9;
+    }
+    .pDot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(245,247,255,.22);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .pDot.on{
+      background: rgba(124,92,255,.85);
+      border-color: rgba(124,92,255,.35);
+      box-shadow: 0 0 0 6px rgba(124,92,255,.12);
+    }
   </style>
 </head>
+
 <body>
-  <div class="reel" id="reel" aria-label="API som restaurang – Reel 9:16">
+  <div class="reel" id="reel" aria-label="API förklarat som restaurang – Reel slides">
     <header>
       <div>
         <div class="badge">API – restaurangmetaforen</div>
-        <div class="title">API är servicen som hämtar från “köket”</div>
-        <div class="subtitle">Autostart vid första tryck. Filmläge gömmer UI för ren inspelning.</div>
+        <div class="title" id="hdrTitle">Så funkar ett API</div>
+        <div class="subtitle">Tryck var som helst: 3–2–1 → slides i synk. Filmläge = ren inspelning.</div>
       </div>
       <div class="actions">
         <button class="btn primary" id="filmBtn">Filmläge</button>
@@ -414,118 +545,189 @@
       </div>
     </header>
 
+    <div class="prog" aria-hidden="true">
+      <div class="pDot" id="pd1"></div>
+      <div class="pDot" id="pd2"></div>
+      <div class="pDot" id="pd3"></div>
+      <div class="pDot" id="pd4"></div>
+    </div>
+
     <div class="tapHint" id="tapHint">
       <div class="tapPill"><span class="dotPulse"></span> Tryck var som helst för att starta</div>
     </div>
 
     <div class="scene">
       <div class="stage">
-        <!-- Nodes -->
-        <div class="node guest">
-          <div class="nodeHead">
-            <div class="nodeTitle">
-              <!-- Guest icon -->
-              <svg class="ico" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="8" r="3.5" stroke="rgba(245,247,255,.88)" stroke-width="1.6"/>
-                <path d="M5.5 20c1.8-4.2 11.2-4.2 13 0" stroke="rgba(245,247,255,.78)" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-              Gästen
+        <!-- SLIDE 1: Guest + Menu -->
+        <section class="slide" id="s1">
+          <div class="grid2">
+            <div class="card" id="s1c1" style="grid-column: 1; grid-row: 1;">
+              <div class="cardHead">
+                <div class="cardTitle">
+                  <!-- Guest icon -->
+                  <svg class="ico" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="3.5" stroke="rgba(245,247,255,.88)" stroke-width="1.6"/>
+                    <path d="M5.5 20c1.8-4.2 11.2-4.2 13 0" stroke="rgba(245,247,255,.78)" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                  Gästen
+                </div>
+                <span class="chip g">Du</span>
+              </div>
+              <div class="cardBody">Du vill ha något (t.ex. “hamburgare”).</div>
             </div>
-            <span class="chip g">Du</span>
-          </div>
-          <div class="nodeMeta">Beställer via appen.</div>
-        </div>
 
-        <div class="node menu">
-          <div class="nodeHead">
-            <div class="nodeTitle">
-              <!-- Menu icon -->
-              <svg class="ico" viewBox="0 0 24 24" fill="none">
-                <rect x="6.5" y="4.8" width="11" height="14.4" rx="2.2" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
-                <line x1="9" y1="9" x2="15.5" y2="9" stroke="rgba(245,247,255,.72)" stroke-width="1.6" stroke-linecap="round"/>
-                <line x1="9" y1="12.5" x2="15.5" y2="12.5" stroke="rgba(245,247,255,.60)" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-              Meny
+            <div class="card" id="s1c2" style="grid-column: 1; grid-row: 2;">
+              <div class="cardHead">
+                <div class="cardTitle">
+                  <!-- Menu icon -->
+                  <svg class="ico" viewBox="0 0 24 24" fill="none">
+                    <rect x="6.5" y="4.8" width="11" height="14.4" rx="2.2" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
+                    <line x1="9" y1="9" x2="15.5" y2="9" stroke="rgba(245,247,255,.72)" stroke-width="1.6" stroke-linecap="round"/>
+                    <line x1="9" y1="12.5" x2="15.5" y2="12.5" stroke="rgba(245,247,255,.60)" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                  Meny
+                </div>
+                <span class="chip a">App</span>
+              </div>
+              <div class="cardBody">Appen visar vad du kan “beställa”.</div>
             </div>
-            <span class="chip a">App</span>
+
+            <!-- empty right side for negative space -->
           </div>
-          <div class="nodeMeta">Här väljer du vad du vill ha.</div>
-        </div>
 
-        <div class="node api">
-          <div class="nodeHead">
-            <div class="nodeTitle">
-              <!-- API/Service icon -->
-              <svg class="ico" viewBox="0 0 24 24" fill="none">
-                <path d="M7 8.8c0-2.3 2.2-4.1 5-4.1s5 1.8 5 4.1" stroke="rgba(245,247,255,.88)" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M6.5 9.6h11" stroke="rgba(245,247,255,.78)" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M8 19.2c.8-3 7.2-3 8 0" stroke="rgba(245,247,255,.72)" stroke-width="1.6" stroke-linecap="round"/>
-                <path d="M16.5 14.2h3.2" stroke="rgba(124,92,255,.95)" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
-              API
-            </div>
-            <span class="chip y">Mellanhand</span>
+          <div class="focusRing" id="s1ring" style="left:18px; top:18px; right:52%; bottom:18px;">
+            <div class="ring"></div>
           </div>
-          <div class="nodeMeta">Tar förfrågan och pratar med servern.</div>
-        </div>
+        </section>
 
-        <div class="barrier"></div>
-        <div class="barrierLabel">Ingen direkt åtkomst</div>
-
-        <div class="node server">
-          <div class="nodeHead">
-            <div class="nodeTitle">
-              <!-- Server icon -->
-              <svg class="ico" viewBox="0 0 24 24" fill="none">
-                <rect x="6.2" y="5.5" width="11.6" height="5.3" rx="1.6" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
-                <rect x="6.2" y="12.7" width="11.6" height="5.8" rx="1.6" stroke="rgba(245,247,255,.62)" stroke-width="1.6"/>
-                <circle cx="9.2" cy="8.1" r="0.8" fill="rgba(255,204,102,.95)"/>
-                <circle cx="9.2" cy="15.6" r="0.8" fill="rgba(56,209,122,.95)"/>
-              </svg>
-              Server
-            </div>
-            <span class="chip r">Kök</span>
-          </div>
-          <div class="nodeMeta">Här finns datan bakom kulisserna.</div>
-        </div>
-
-        <div class="node data">
-          <div class="nodeHead">
-            <div class="nodeTitle">
-              <!-- Data icon -->
-              <svg class="ico" viewBox="0 0 24 24" fill="none">
-                <path d="M7 8.2c0-1.8 10-1.8 10 0s-10 1.8-10 0Z" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
-                <path d="M7 8.2v7.4c0 1.8 10 1.8 10 0V8.2" stroke="rgba(245,247,255,.62)" stroke-width="1.6"/>
-              </svg>
-              Svar
-            </div>
-            <span class="chip">Data</span>
-          </div>
-          <div class="nodeMeta">Du får bara det du bad om.</div>
-        </div>
-
-        <!-- Packet -->
-        <div class="packet toGuest" id="packet">
-          <div class="packetLeft">
-            <div style="width:10px;height:10px;border-radius:999px;background:rgba(56,209,122,.95);box-shadow:0 0 0 6px rgba(56,209,122,.10)"></div>
-            <div style="min-width:0">
-              <div class="packetTitle" id="packetTitle">Request</div>
-              <div class="packetSub" id="packetSub">Hämta “hamburgare”</div>
+        <!-- SLIDE 2: API appears -->
+        <section class="slide" id="s2">
+          <div class="grid2" style="grid-template-columns: 1fr; grid-template-rows: 1fr;">
+            <div class="card" id="s2c1" style="grid-column: 1; grid-row: 1; width: 86%; margin: 0 auto; align-self:center;">
+              <div class="cardHead">
+                <div class="cardTitle">
+                  <!-- API icon -->
+                  <svg class="ico" viewBox="0 0 24 24" fill="none">
+                    <path d="M7 8.8c0-2.3 2.2-4.1 5-4.1s5 1.8 5 4.1" stroke="rgba(245,247,255,.88)" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M6.5 9.6h11" stroke="rgba(245,247,255,.78)" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M8 19.2c.8-3 7.2-3 8 0" stroke="rgba(245,247,255,.72)" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M16.5 14.2h3.2" stroke="rgba(124,92,255,.95)" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                  API
+                </div>
+                <span class="chip y">Mellanhand</span>
+              </div>
+              <div class="cardBody">API tar emot din förfrågan och skickar den vidare på rätt sätt.</div>
             </div>
           </div>
-          <div class="pill" id="packetPill">GET</div>
-        </div>
+
+          <div class="focusRing" id="s2ring" style="inset:18px;">
+            <div class="ring" style="border-color: rgba(255,204,102,.35); box-shadow: 0 0 0 6px rgba(255,204,102,.10), 0 20px 70px rgba(255,204,102,.10);"></div>
+          </div>
+        </section>
+
+        <!-- SLIDE 3: Server & barrier -->
+        <section class="slide" id="s3">
+          <div class="grid2">
+            <div class="card" id="s3c1" style="grid-column: 2; grid-row: 1;">
+              <div class="cardHead">
+                <div class="cardTitle">
+                  <!-- Server icon -->
+                  <svg class="ico" viewBox="0 0 24 24" fill="none">
+                    <rect x="6.2" y="5.5" width="11.6" height="5.3" rx="1.6" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
+                    <rect x="6.2" y="12.7" width="11.6" height="5.8" rx="1.6" stroke="rgba(245,247,255,.62)" stroke-width="1.6"/>
+                    <circle cx="9.2" cy="8.1" r="0.8" fill="rgba(255,204,102,.95)"/>
+                    <circle cx="9.2" cy="15.6" r="0.8" fill="rgba(56,209,122,.95)"/>
+                  </svg>
+                  Server
+                </div>
+                <span class="chip r">Kök</span>
+              </div>
+              <div class="cardBody">Här finns datan och logiken “bakom kulisserna”.</div>
+            </div>
+
+            <div class="card" id="s3c2" style="grid-column: 1; grid-row: 2;">
+              <div class="cardHead">
+                <div class="cardTitle">
+                  <!-- Lock icon -->
+                  <svg class="ico" viewBox="0 0 24 24" fill="none">
+                    <rect x="7" y="11" width="10" height="8" rx="2" stroke="rgba(245,247,255,.72)" stroke-width="1.6"/>
+                    <path d="M9 11V9.2c0-1.9 1.2-3.2 3-3.2s3 1.3 3 3.2V11" stroke="rgba(245,247,255,.80)" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                  Princip
+                </div>
+                <span class="chip">Säkerhet</span>
+              </div>
+              <div class="cardBody">Du får inte direktåtkomst till “köket” – du går via API.</div>
+            </div>
+          </div>
+
+          <div class="barrierWrap" id="s3bar">
+            <div class="barrier"></div>
+            <div class="barrierLabel">Ingen direkt åtkomst</div>
+          </div>
+        </section>
+
+        <!-- SLIDE 4: Request → Response in sync -->
+        <section class="slide" id="s4">
+          <div class="grid2">
+            <div class="card" id="s4c1" style="grid-column: 1; grid-row: 1;">
+              <div class="cardHead">
+                <div class="cardTitle">
+                  <!-- API icon small -->
+                  <svg class="ico" viewBox="0 0 24 24" fill="none">
+                    <path d="M7 8.8c0-2.3 2.2-4.1 5-4.1s5 1.8 5 4.1" stroke="rgba(245,247,255,.88)" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M6.5 9.6h11" stroke="rgba(245,247,255,.78)" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M8 19.2c.8-3 7.2-3 8 0" stroke="rgba(245,247,255,.72)" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                  API levererar
+                </div>
+                <span class="chip y">Svar</span>
+              </div>
+              <div class="cardBody">Appen får ett “svar” tillbaka – exakt det den bad om.</div>
+            </div>
+
+            <div class="card" id="s4c2" style="grid-column: 2; grid-row: 2;">
+              <div class="cardHead">
+                <div class="cardTitle">
+                  <!-- Data icon -->
+                  <svg class="ico" viewBox="0 0 24 24" fill="none">
+                    <path d="M7 8.2c0-1.8 10-1.8 10 0s-10 1.8-10 0Z" stroke="rgba(245,247,255,.78)" stroke-width="1.6"/>
+                    <path d="M7 8.2v7.4c0 1.8 10 1.8 10 0V8.2" stroke="rgba(245,247,255,.62)" stroke-width="1.6"/>
+                  </svg>
+                  Resultat
+                </div>
+                <span class="chip g">OK</span>
+              </div>
+              <div class="cardBody">Det här gör att appar kan prata med varandra på ett kontrollerat sätt.</div>
+            </div>
+          </div>
+
+          <div class="packet" id="packet">
+            <div class="packetLeft">
+              <div class="dot" id="pktDot"></div>
+              <div style="min-width:0">
+                <div class="pktTitle" id="pktTitle">Request</div>
+                <div class="pktSub" id="pktSub">Hämta “hamburgare”</div>
+              </div>
+            </div>
+            <div class="pill" id="pktPill">GET</div>
+          </div>
+        </section>
       </div>
     </div>
 
     <div class="bottom">
-      <div class="stepBox" id="stepBox"><strong>Tryck för att starta.</strong> Då kör vi en snabb 4-stegsresa.</div>
+      <div class="caption" id="caption">
+        <div class="capTitle" id="capTitle">Start</div>
+        <div class="capText" id="capText">Tryck var som helst för att börja.</div>
+      </div>
     </div>
 
     <div class="overlay" id="overlay" aria-hidden="true">
       <div class="count">
         <div class="countNum" id="countNum">3</div>
-        <div class="countText" id="countText">Startar animationen… börja skärminspela nu.</div>
+        <div class="countText">Startar… börja skärminspela nu.</div>
       </div>
     </div>
   </div>
@@ -534,14 +736,47 @@
     const reel = document.getElementById("reel");
     const overlay = document.getElementById("overlay");
     const countNum = document.getElementById("countNum");
-    const packet = document.getElementById("packet");
-    const packetTitle = document.getElementById("packetTitle");
-    const packetSub = document.getElementById("packetSub");
-    const packetPill = document.getElementById("packetPill");
-    const stepBox = document.getElementById("stepBox");
     const filmBtn = document.getElementById("filmBtn");
     const replayBtn = document.getElementById("replayBtn");
     const tapHint = document.getElementById("tapHint");
+
+    const hdrTitle = document.getElementById("hdrTitle");
+    const caption = document.getElementById("caption");
+    const capTitle = document.getElementById("capTitle");
+    const capText = document.getElementById("capText");
+
+    const slides = {
+      1: { el: document.getElementById("s1"), dots: ["pd1"], title: "Du beställer", capT: "Steg 1", capX: "Du väljer i appen (menyn) vad du vill ha." },
+      2: { el: document.getElementById("s2"), dots: ["pd2"], title: "API tar emot", capT: "Steg 2", capX: "API är mellanhanden som tar din förfrågan." },
+      3: { el: document.getElementById("s3"), dots: ["pd3"], title: "Servern är köket", capT: "Steg 3", capX: "Du går inte in i köket. API pratar med servern åt dig." },
+      4: { el: document.getElementById("s4"), dots: ["pd4"], title: "Svaret tillbaka", capT: "Steg 4", capX: "API levererar svaret tillbaka till appen." },
+    };
+
+    const pd1 = document.getElementById("pd1");
+    const pd2 = document.getElementById("pd2");
+    const pd3 = document.getElementById("pd3");
+    const pd4 = document.getElementById("pd4");
+    const dots = [pd1,pd2,pd3,pd4];
+
+    // Slide elements that appear in sync
+    const s1c1 = document.getElementById("s1c1");
+    const s1c2 = document.getElementById("s1c2");
+    const s1ring = document.getElementById("s1ring");
+
+    const s2c1 = document.getElementById("s2c1");
+    const s2ring = document.getElementById("s2ring");
+
+    const s3c1 = document.getElementById("s3c1");
+    const s3c2 = document.getElementById("s3c2");
+    const s3bar = document.getElementById("s3bar");
+
+    const s4c1 = document.getElementById("s4c1");
+    const s4c2 = document.getElementById("s4c2");
+    const packet = document.getElementById("packet");
+    const pktTitle = document.getElementById("pktTitle");
+    const pktSub = document.getElementById("pktSub");
+    const pktPill = document.getElementById("pktPill");
+    const pktDot = document.getElementById("pktDot");
 
     let startedOnce = false;
     let running = false;
@@ -549,20 +784,42 @@
 
     function clearTimers(){ timers.forEach(t => clearTimeout(t)); timers = []; }
 
-    function setPacket(state, title, sub, pill){
-      packet.className = "packet " + state;
-      packetTitle.textContent = title;
-      packetSub.textContent = sub;
-      packetPill.textContent = pill;
+    function resetVisuals(){
+      // hide all slides
+      Object.values(slides).forEach(s => s.el.classList.remove("active"));
+      dots.forEach(d => d.classList.remove("on"));
+
+      // reset appearing elements
+      [s1c1,s1c2,s2c1,s3c1,s3c2,s4c1,s4c2].forEach(x => x.classList.remove("show"));
+      [s1ring,s2ring].forEach(x => x.classList.remove("show"));
+      s3bar.classList.remove("show");
+
+      // packet reset
+      packet.classList.remove("show","move","pktGuest","pktApi","pktServer","pktBack","pktDone");
+      packet.style.opacity = "0";
+
+      // caption
+      caption.classList.remove("show");
     }
 
-    function reset(){
-      clearTimers();
-      running = false;
-      setPacket("toGuest", "Request", 'Hämta “hamburgare”', "GET");
-      stepBox.innerHTML = "<strong>Tryck för att starta.</strong> Då kör vi en snabb 4-stegsresa.";
-      overlay.classList.remove("show");
-      countNum.textContent = "3";
+    function setCaption(title, text){
+      capTitle.textContent = title;
+      capText.textContent = text;
+      caption.classList.remove("show");
+      // force reflow so animation always plays
+      void caption.offsetWidth;
+      caption.classList.add("show");
+    }
+
+    function activateSlide(n){
+      Object.values(slides).forEach(s => s.el.classList.remove("active"));
+      dots.forEach(d => d.classList.remove("on"));
+
+      slides[n].el.classList.add("active");
+      dots[n-1].classList.add("on");
+      hdrTitle.textContent = slides[n].title;
+
+      setCaption(slides[n].capT, slides[n].capX);
     }
 
     function countdownThenRun(){
@@ -570,8 +827,8 @@
       running = true;
 
       tapHint.classList.add("hide");
-      overlay.classList.add("show");
 
+      overlay.classList.add("show");
       let n = 3;
       countNum.textContent = n;
 
@@ -579,69 +836,122 @@
       timers.push(setTimeout(()=> { n=1; countNum.textContent = n; }, 1600));
       timers.push(setTimeout(()=> {
         overlay.classList.remove("show");
-        runSequence();
+        runTimeline();
       }, 2400));
     }
 
-    function runSequence(){
-      // Step 1
-      setPacket("toGuest", "Request", '”Jag vill ha en hamburgare”', "GET");
-      stepBox.innerHTML = "<strong>Steg 1:</strong> Gästen beställer via appen (menyn).";
+    // Timeline: slide durations and synced element reveals
+    function runTimeline(){
+      clearTimers();
+      resetVisuals();
 
-      // Step 2: to API
-      timers.push(setTimeout(()=> {
-        setPacket("toApi", "Request", "Skickas till API", "GET");
-        stepBox.innerHTML = "<strong>Steg 2:</strong> API tar emot förfrågan och vet hur man pratar med servern.";
-      }, 950));
+      // Slide 1
+      activateSlide(1);
+      timers.push(setTimeout(()=> { s1c1.classList.add("show"); }, 120));
+      timers.push(setTimeout(()=> { s1c2.classList.add("show"); }, 520));
+      timers.push(setTimeout(()=> { s1ring.classList.add("show"); }, 720));
 
-      // Step 3: to Server
+      // Transition to slide 2
       timers.push(setTimeout(()=> {
-        setPacket("toServer", "Request", "API → Server", "GET");
-        stepBox.innerHTML = "<strong>Steg 3:</strong> Servern hämtar det som behövs (”köket”).";
-      }, 2100));
+        activateSlide(2);
+        timers.push(setTimeout(()=> { s2c1.classList.add("show"); }, 140));
+        timers.push(setTimeout(()=> { s2ring.classList.add("show"); }, 520));
+      }, 2600));
 
-      // Step 4: return (response)
+      // Transition to slide 3
       timers.push(setTimeout(()=> {
-        setPacket("toApi", "Response", "Här är det du bad om", "200");
-        stepBox.innerHTML = "<strong>Steg 4:</strong> API får svaret och förbereder det för appen.";
-      }, 3200));
+        activateSlide(3);
+        timers.push(setTimeout(()=> { s3c1.classList.add("show"); }, 140));
+        timers.push(setTimeout(()=> { s3bar.classList.add("show"); }, 520));
+        timers.push(setTimeout(()=> { s3c2.classList.add("show"); }, 860));
+      }, 5200));
 
-      // Back to Guest
+      // Transition to slide 4 (packet animation)
       timers.push(setTimeout(()=> {
-        setPacket("toGuest", "Response", "Levereras till appen", "200");
-        stepBox.innerHTML = "<strong>Kort sagt:</strong> API är mellanhanden som levererar svaret – utan att du går in i ”köket”.";
-      }, 4200));
+        activateSlide(4);
+        timers.push(setTimeout(()=> { s4c1.classList.add("show"); }, 140));
+        timers.push(setTimeout(()=> { s4c2.classList.add("show"); }, 520));
+
+        // packet show
+        timers.push(setTimeout(()=> {
+          packet.classList.add("show");
+          packet.style.opacity = "1";
+          packet.classList.add("move","pktGuest");
+          pktTitle.textContent = "Request";
+          pktSub.textContent = "Hämta “hamburgare”";
+          pktPill.textContent = "GET";
+          pktDot.style.background = "rgba(56,209,122,.95)";
+          pktDot.style.boxShadow = "0 0 0 6px rgba(56,209,122,.10)";
+        }, 820));
+
+        // move to API
+        timers.push(setTimeout(()=> {
+          packet.classList.remove("pktGuest");
+          packet.classList.add("pktApi");
+          setCaption("Request", "Förfrågan går till API…");
+        }, 1650));
+
+        // move to Server
+        timers.push(setTimeout(()=> {
+          packet.classList.remove("pktApi");
+          packet.classList.add("pktServer");
+          setCaption("Server", "API hämtar från “köket”…");
+        }, 2550));
+
+        // response back
+        timers.push(setTimeout(()=> {
+          packet.classList.remove("pktServer");
+          packet.classList.add("pktBack");
+          pktTitle.textContent = "Response";
+          pktSub.textContent = "Här är det du bad om";
+          pktPill.textContent = "200";
+          pktDot.style.background = "rgba(124,92,255,.95)";
+          pktDot.style.boxShadow = "0 0 0 6px rgba(124,92,255,.12)";
+          setCaption("Response", "API levererar svaret tillbaka.");
+        }, 3550));
+
+        // done
+        timers.push(setTimeout(()=> {
+          packet.classList.remove("pktBack");
+          packet.classList.add("pktDone");
+          setCaption("Kort sagt", "API är mellanhanden som levererar svaret — utan att du går in i “köket”.");
+        }, 4550));
+
+      }, 7850));
 
       // End
       timers.push(setTimeout(()=> {
         running = false;
-      }, 5200));
+      }, 13200));
     }
 
-    // Autostart: första touch/click (iOS-friendly)
+    function resetAll(){
+      clearTimers();
+      running = false;
+      overlay.classList.remove("show");
+      countNum.textContent = "3";
+      tapHint.classList.remove("hide");
+      resetVisuals();
+      hdrTitle.textContent = "Så funkar ett API";
+      setCaption("Start", "Tryck var som helst för att börja.");
+    }
+
+    // Autostart on first interaction (iOS friendly)
     function firstStart(){
       if(startedOnce) return;
       startedOnce = true;
       countdownThenRun();
     }
 
-    reel.addEventListener("pointerdown", firstStart, { once: true });
-    reel.addEventListener("click", firstStart, { once: true });
+    reel.addEventListener("pointerdown", firstStart, { once:true });
+    reel.addEventListener("click", firstStart, { once:true });
 
-    filmBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      reel.classList.toggle("film");
-    });
+    // Buttons
+    filmBtn.addEventListener("click", (e)=>{ e.stopPropagation(); reel.classList.toggle("film"); });
+    replayBtn.addEventListener("click", (e)=>{ e.stopPropagation(); resetAll(); countdownThenRun(); });
 
-    replayBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      reset();
-      // Replay without needing a second “first tap”
-      countdownThenRun();
-    });
-
-    reset();
+    // Initial
+    resetAll();
   </script>
 </body>
 </html>
-

@@ -22,7 +22,6 @@ const respCode = document.getElementById("respCode");
 
 const pulseLayer = document.getElementById("pulseLayer");
 
-// Geometry paths
 const geom = {
   "app->api": document.getElementById("g-app-api"),
   "api->server": document.getElementById("g-api-server"),
@@ -32,16 +31,13 @@ const geom = {
   "api->app": document.getElementById("g-api-app"),
 };
 
-function clearActive(){
-  [nApp,nApi,nServer,nDb].forEach(n=>n.classList.remove("active"));
-}
+function clearActive(){ [nApp,nApi,nServer,nDb].forEach(n=>n.classList.remove("active")); }
 function showResponse(show, text="200 OK", code="200"){
   response.classList.toggle("show", show);
   response.setAttribute("aria-hidden", show ? "false" : "true");
   respText.textContent = text;
   respCode.textContent = code;
 }
-
 function removePulseStrokes(){
   pulseLayer.querySelectorAll(".pulseStroke, .glowStroke").forEach(e => e.remove());
 }
@@ -52,15 +48,13 @@ function colors(kind){
   return { main:"rgba(124,92,255,.95)", glow:"rgba(124,92,255,.42)" };
 }
 
-function pulseOnce(key, kind="neutral", duration=880){
+function pulseOnce(key, kind="neutral", duration=860){
   const base = geom[key];
   if(!base) return Promise.resolve();
-
   removePulseStrokes();
 
   const { main, glow } = colors(kind);
   const len = base.getTotalLength();
-
   const dashA = Math.max(10, len * 0.20);
   const dashB = len;
 
@@ -108,52 +102,49 @@ const scenarios = {
   burger: {
     method: "GET",
     endpoint: "/menu/items/42",
-    status: "200 OK",
     responseText: "200 OK • { item: … }",
     responseCode: "200",
     steps: [
       { focus:"app",    title:"Du väljer något i appen", desc:"(metafor) du beställer via menyn.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"app",    pulse:["app->api","neutral"],     title:"Appen skickar en förfrågan", desc:"API tar emot din request.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"api",    pulse:["api->server","request"],  title:"API skickar vidare", desc:"Request skickas till servern.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"server", pulse:["server->db","request"],   title:"Servern hämtar data", desc:"Servern frågar databasen.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
-      { focus:"db",     pulse:["db->server","response"],  title:"Databasen svarar", desc:"Data går tillbaka till servern.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
-      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Servern skickar svaret tillbaka.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
-      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får svaret den bad om.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
-      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa innehållet för dig.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Appen skickar en request.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
+      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"API skickar vidare.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
+      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Servern hämtar data.", tech:{method:"GET", endpoint:"/menu/items/42", status:"—"} },
+      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Databasen svarar.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svaret går tillbaka.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får svaret.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
+      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa resultatet.", tech:{method:"GET", endpoint:"/menu/items/42", status:"200 OK"} },
     ]
   },
   uber: {
     method: "POST",
     endpoint: "/rides",
-    status: "201 Created",
     responseText: "201 Created • { rideId: … }",
     responseCode: "201",
     steps: [
-      { focus:"app",    title:"Du beställer en resa", desc:"(metafor) du säger vad du vill ha.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Din beställning blir en request.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern tar emot och jobbar.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"server", pulse:["server->db","request"],   title:"Servern sparar / matchar", desc:"Data skrivs/uppdateras.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
-      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Resultat tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
-      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svaret skickas tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
-      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen kan visa bekräftelse.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
-      { focus:"app",    done:true,                        title:"Klart", desc:"Du ser att resan är skapad.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+      { focus:"app",    title:"Du beställer en resa", desc:"Du skickar en request.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Requesten går till API.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern tar emot.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Skapar/sparar.", tech:{method:"POST", endpoint:"/rides", status:"—"} },
+      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Bekräftelse tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svar går tillbaka.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+      { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får svaret.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
+      { focus:"app",    done:true,                        title:"Klart", desc:"Appen visar bekräftelse.", tech:{method:"POST", endpoint:"/rides", status:"201 Created"} },
     ]
   },
   login: {
     method: "GET",
     endpoint: "/bookings (Authorization: Bearer …)",
-    status: "200 OK",
     responseText: "200 OK • [ … ]",
     responseCode: "200",
     steps: [
-      { focus:"app",    title:"Du vill se dina bokningar", desc:"(tekniskt) requesten behöver auth.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Request skickas med token.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern verifierar behörighet.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Servern hämtar bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
-      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Bokningar returneras.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
-      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svaret går tillbaka.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
+      { focus:"app",    title:"Du vill se dina bokningar", desc:"Requesten behöver auth.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"app",    pulse:["app->api","neutral"],     title:"App → API", desc:"Token följer med.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"api",    pulse:["api->server","request"],  title:"API → Server", desc:"Servern verifierar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"server", pulse:["server->db","request"],   title:"Server → Databas", desc:"Hämtar bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"—"} },
+      { focus:"db",     pulse:["db->server","response"],  title:"Databas → Server", desc:"Data tillbaka.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
+      { focus:"server", pulse:["server->api","response"], title:"Server → API", desc:"Svar tillbaka.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
       { focus:"api",    pulse:["api->app","response"],    title:"API → App", desc:"Appen får listan.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
-      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa dina bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
+      { focus:"app",    done:true,                        title:"Klart", desc:"Nu kan appen visa bokningar.", tech:{method:"GET", endpoint:"/bookings (auth)", status:"200 OK"} },
     ]
   }
 };
@@ -171,51 +162,41 @@ function buildDots(count){
   }
 }
 
-function renderStep(){
+function render(){
   const sc = scenarios[currentKey];
   const total = sc.steps.length;
 
   stepText.textContent = `Steg ${Math.min(step+1,total)}/${total}`;
+  Array.from(dotsEl.children).forEach((d,i)=>d.classList.toggle("on", i===step));
 
-  const dots = Array.from(dotsEl.children);
-  dots.forEach((d,i)=> d.classList.toggle("on", i === step));
-
-  prevBtn.disabled = (step === 0);
-
-  // ✅ Safari: låt knappen vara aktiv, skydda med busy-check i handlern
-  nextBtn.disabled = false;
-
-  nextBtn.textContent = (step >= total - 1) ? "Spela igen" : "Nästa";
+  prevBtn.disabled = (step===0);
+  nextBtn.textContent = (step>=total-1) ? "Spela igen" : "Nästa";
 }
 
-function applyCopy(s){
+function applyStepUI(s){
   title.textContent = s.title;
   desc.textContent = s.desc;
   tMethod.textContent = s.tech?.method ?? "—";
   tEndpoint.textContent = s.tech?.endpoint ?? "—";
   tStatus.textContent = s.tech?.status ?? "—";
-}
 
-function focusNode(key){
   clearActive();
-  if(key === "app") nApp.classList.add("active");
-  if(key === "api") nApi.classList.add("active");
-  if(key === "server") nServer.classList.add("active");
-  if(key === "db") nDb.classList.add("active");
+  if(s.focus==="app") nApp.classList.add("active");
+  if(s.focus==="api") nApi.classList.add("active");
+  if(s.focus==="server") nServer.classList.add("active");
+  if(s.focus==="db") nDb.classList.add("active");
 }
 
-async function runCurrentStep(){
+async function playCurrent(){
   const sc = scenarios[currentKey];
   const s = sc.steps[step];
 
-  applyCopy(s);
-  focusNode(s.focus);
+  applyStepUI(s);
 
   if(s.done){
     showResponse(true, sc.responseText, sc.responseCode);
     return;
   }
-
   if(s.pulse){
     const [pathKey, kind] = s.pulse;
     await pulseOnce(pathKey, kind);
@@ -231,43 +212,22 @@ function resetScenario(){
   const sc = scenarios[currentKey];
   buildDots(sc.steps.length);
 
+  title.textContent = "Välj scenario och tryck Nästa";
+  desc.textContent = "En puls i taget visar exakt hur request → response går.";
   tMethod.textContent = sc.method;
   tEndpoint.textContent = sc.endpoint;
   tStatus.textContent = "—";
 
-  title.textContent = "Välj scenario och tryck Nästa";
-  desc.textContent = "En puls i taget visar exakt hur request → response går.";
-
   clearActive();
-  renderStep();
+  render();
 }
 
-scenarioSel.addEventListener("change", () => {
-  currentKey = scenarioSel.value;
-  resetScenario();
-});
-
-prevBtn.addEventListener("click", async () => {
-  if(busy || step === 0) return;
-  busy = true;
-  removePulseStrokes();
-  showResponse(false);
-
-  step = Math.max(0, step - 1);
-  renderStep();
-  await runCurrentStep();
-
-  busy = false;
-  renderStep();
-});
-
-nextBtn.addEventListener("click", async () => {
+function onNext(){
   if(busy) return;
-
   const sc = scenarios[currentKey];
   const total = sc.steps.length;
 
-  if(step >= total - 1){
+  if(step >= total-1){
     resetScenario();
     return;
   }
@@ -276,15 +236,36 @@ nextBtn.addEventListener("click", async () => {
   removePulseStrokes();
   showResponse(false);
 
-  renderStep();
-  await runCurrentStep();
+  playCurrent().then(()=>{
+    step = Math.min(total-1, step+1);
+    render();
+    busy = false;
+  });
+}
 
-  step = Math.min(total - 1, step + 1);
-  renderStep();
+function onPrev(){
+  if(busy || step===0) return;
+  busy = true;
+  removePulseStrokes();
+  showResponse(false);
 
-  busy = false;
-  renderStep();
+  step = Math.max(0, step-1);
+  render();
+
+  playCurrent().then(()=>{
+    busy = false;
+  });
+}
+
+scenarioSel.addEventListener("change", () => {
+  currentKey = scenarioSel.value;
+  resetScenario();
 });
 
-// init
+// iOS: lyssna på både touchstart och click
+nextBtn.addEventListener("touchstart", (e)=>{ e.preventDefault(); onNext(); }, {passive:false});
+prevBtn.addEventListener("touchstart", (e)=>{ e.preventDefault(); onPrev(); }, {passive:false});
+nextBtn.addEventListener("click", onNext);
+prevBtn.addEventListener("click", onPrev);
+
 resetScenario();

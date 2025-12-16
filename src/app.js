@@ -1,162 +1,217 @@
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => [...document.querySelectorAll(sel)];
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+
+const ui = {
+  methodVal: $("#methodVal"),
+  endpointVal: $("#endpointVal"),
+  statusVal: $("#statusVal"),
+  explainText: $("#explainText"),
+  stepNow: $("#stepNow"),
+  stepTotal: $("#stepTotal"),
+  dots: $("#dots"),
+  nextBtn: $("#nextBtn"),
+  resetBtn: $("#resetBtn"),
+
+  nodeApp: $("#nodeApp"),
+  nodeApi: $("#nodeApi"),
+  nodeServer: $("#nodeServer"),
+  nodeDb: $("#nodeDb"),
+
+  pulseReq: $("#pulseRequest"),
+  pulseRes: $("#pulseResponse"),
+
+  // paths
+  p_app_api: $("#path_app_api"),
+  p_api_server: $("#path_api_server"),
+  p_server_db: $("#path_server_db"),
+  p_db_api: $("#path_db_api"),
+  p_api_app: $("#path_api_app"),
+};
 
 const state = {
-  scenario: "get",
+  scenarioKey: "look",
   step: 0,
-  totalSteps: 8,
   running: false,
+  total: 7,
+  rafId: null,
 };
 
 const scenarios = {
-  get: {
+  // GET
+  look: {
+    friendly: "Titta på meny",
     method: "GET",
     endpoint: "/menu/items/42",
-    story: [
-      { focus: "app", pulse: null, status: "—", text: "Användaren öppnar appen och trycker “Visa detalj”. Appen förbereder en fråga." },
-      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Kan jag få info om denna sak?”" },
-      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot frågan och ser till att den går till rätt server." },
-      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare frågan till servern (som gör jobbet)." },
-      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern förstår vad som efterfrågas och behöver hämta data." },
-      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern frågar databasen efter rätt information." },
-      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen skickar tillbaka datan till servern." },
-      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar svaret via API:t tillbaka till appen. Appen visar resultatet för användaren." },
+    frames: [
+      {
+        focus: "app",
+        status: "—",
+        pulse: null,
+        text: "Användaren trycker på något i appen. Appen ska be om information.",
+      },
+      {
+        focus: "app",
+        status: "Appen frågar…",
+        pulse: { type: "request", path: "p_app_api" },
+        text: "Appen skickar en fråga: “Kan jag få info om det här?”",
+      },
+      {
+        focus: "api",
+        status: "API skickar vidare…",
+        pulse: { type: "request", path: "p_api_server" },
+        text: "API:t tar emot frågan och skickar den till rätt server.",
+      },
+      {
+        focus: "server",
+        status: "Servern hämtar data…",
+        pulse: { type: "request", path: "p_server_db" },
+        text: "Servern behöver data – den frågar databasen.",
+      },
+      {
+        focus: "db",
+        status: "Databasen svarar…",
+        pulse: { type: "response", path: "p_db_api" },
+        text: "Databasen skickar tillbaka informationen.",
+      },
+      {
+        focus: "api",
+        status: "Svar på väg…",
+        pulse: { type: "response", path: "p_api_app" },
+        text: "API:t skickar svaret tillbaka till appen.",
+      },
+      {
+        focus: "app",
+        status: "Klart ✅",
+        pulse: null,
+        text: "Appen visar informationen för användaren.",
+      },
     ],
   },
 
-  post: {
+  // POST
+  order: {
+    friendly: "Skicka beställning",
     method: "POST",
     endpoint: "/orders",
-    story: [
-      { focus: "app", pulse: null, status: "—", text: "Användaren trycker “Beställ”. Appen samlar ihop vad som ska skickas." },
-      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Här är min beställning.”" },
-      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot och kontrollerar att allt är i rätt format." },
-      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare beställningen till servern." },
-      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern skapar en ny order och behöver spara den." },
-      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern sparar beställningen i databasen." },
-      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen bekräftar att allt sparats." },
-      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar bekräftelse via API:t tillbaka till appen. Appen visar “Order skapad”." },
+    frames: [
+      {
+        focus: "app",
+        status: "—",
+        pulse: null,
+        text: "Användaren trycker “Beställ”. Appen förbereder vad som ska skickas.",
+      },
+      {
+        focus: "app",
+        status: "Appen skickar…",
+        pulse: { type: "request", path: "p_app_api" },
+        text: "Appen skickar: “Här är min beställning.”",
+      },
+      {
+        focus: "api",
+        status: "API skickar vidare…",
+        pulse: { type: "request", path: "p_api_server" },
+        text: "API:t ser till att beställningen når servern.",
+      },
+      {
+        focus: "server",
+        status: "Servern sparar…",
+        pulse: { type: "request", path: "p_server_db" },
+        text: "Servern skapar ordern och sparar den i databasen.",
+      },
+      {
+        focus: "db",
+        status: "Databasen bekräftar…",
+        pulse: { type: "response", path: "p_db_api" },
+        text: "Databasen säger: “Sparat!”",
+      },
+      {
+        focus: "api",
+        status: "Svar på väg…",
+        pulse: { type: "response", path: "p_api_app" },
+        text: "API:t skickar bekräftelsen tillbaka till appen.",
+      },
+      {
+        focus: "app",
+        status: "Klart ✅",
+        pulse: null,
+        text: "Appen visar: “Din beställning är mottagen.”",
+      },
     ],
   },
 
-  put: {
+  // PUT
+  edit: {
+    friendly: "Ändra profil",
     method: "PUT",
     endpoint: "/profile",
-    story: [
-      { focus: "app", pulse: null, status: "—", text: "Användaren ändrar sin profil och trycker “Spara”." },
-      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Uppdatera min profil med detta.”" },
-      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot uppdateringen och skickar den rätt." },
-      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare till servern." },
-      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern uppdaterar informationen." },
-      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern sparar ändringen i databasen." },
-      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen bekräftar uppdateringen." },
-      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar svaret via API:t till appen. Appen visar den nya profilen." },
+    frames: [
+      { focus: "app", status: "—", pulse: null, text: "Användaren ändrar något och trycker “Spara”." },
+      { focus: "app", status: "Appen skickar…", pulse: { type: "request", path: "p_app_api" }, text: "Appen skickar: “Uppdatera min profil så här.”" },
+      { focus: "api", status: "API skickar vidare…", pulse: { type: "request", path: "p_api_server" }, text: "API:t skickar uppdateringen till servern." },
+      { focus: "server", status: "Servern uppdaterar…", pulse: { type: "request", path: "p_server_db" }, text: "Servern sparar ändringen i databasen." },
+      { focus: "db", status: "Databasen bekräftar…", pulse: { type: "response", path: "p_db_api" }, text: "Databasen säger: “Uppdaterat!”" },
+      { focus: "api", status: "Svar på väg…", pulse: { type: "response", path: "p_api_app" }, text: "API:t skickar svaret tillbaka." },
+      { focus: "app", status: "Klart ✅", pulse: null, text: "Appen visar den uppdaterade profilen." },
     ],
   },
 
-  delete: {
+  // DELETE
+  remove: {
+    friendly: "Ta bort order",
     method: "DELETE",
     endpoint: "/orders/42",
-    story: [
-      { focus: "app", pulse: null, status: "—", text: "Användaren trycker “Ta bort”. Appen frågar systemet att radera något." },
-      { focus: "app", pulse: "req1", status: "Skickar...", text: "Appen skickar en request: “Ta bort detta.”" },
-      { focus: "api", pulse: "req1", status: "Skickar...", text: "API:t tar emot och skickar borttagnings-uppdraget vidare." },
-      { focus: "api", pulse: "req2", status: "Skickar...", text: "API:t skickar vidare till servern." },
-      { focus: "server", pulse: "req2", status: "Jobbar...", text: "Servern förbereder borttagningen." },
-      { focus: "server", pulse: "req3", status: "Jobbar...", text: "Servern ber databasen att radera posten." },
-      { focus: "db", pulse: "res1", status: "Svarar...", text: "Databasen bekräftar att posten är borttagen." },
-      { focus: "api", pulse: "res2", status: "Klart ✅", text: "Servern skickar “borttagen” via API:t till appen. Appen uppdaterar listan." },
+    frames: [
+      { focus: "app", status: "—", pulse: null, text: "Användaren trycker “Ta bort”." },
+      { focus: "app", status: "Appen skickar…", pulse: { type: "request", path: "p_app_api" }, text: "Appen skickar: “Ta bort den här.”" },
+      { focus: "api", status: "API skickar vidare…", pulse: { type: "request", path: "p_api_server" }, text: "API:t skickar uppdraget till servern." },
+      { focus: "server", status: "Servern tar bort…", pulse: { type: "request", path: "p_server_db" }, text: "Servern ber databasen att radera." },
+      { focus: "db", status: "Databasen bekräftar…", pulse: { type: "response", path: "p_db_api" }, text: "Databasen säger: “Borttagen!”" },
+      { focus: "api", status: "Svar på väg…", pulse: { type: "response", path: "p_api_app" }, text: "API:t skickar svaret tillbaka." },
+      { focus: "app", status: "Klart ✅", pulse: null, text: "Appen uppdaterar listan så att den är borta." },
     ],
   },
 };
 
-// --- UI refs
-const methodVal = $("#methodVal");
-const endpointVal = $("#endpointVal");
-const statusVal = $("#statusVal");
-const explainText = $("#explainText");
-const stepNow = $("#stepNow");
-const stepTotal = $("#stepTotal");
-const dotsWrap = $("#dots");
-
-const nextBtn = $("#nextBtn");
-const resetBtn = $("#resetBtn");
-
-const nodeApp = $("#nodeApp");
-const nodeApi = $("#nodeApi");
-const nodeServer = $("#nodeServer");
-const nodeDb = $("#nodeDb");
-
-const pulseReq1 = $("#pulseReq1");
-const pulseReq2 = $("#pulseReq2");
-const pulseReq3 = $("#pulseReq3");
-const pulseRes1 = $("#pulseRes1");
-const pulseRes2 = $("#pulseRes2");
-
-function buildDots(total) {
-  dotsWrap.innerHTML = "";
-  for (let i = 0; i < total; i++) {
-    const d = document.createElement("div");
-    d.className = "dot";
-    dotsWrap.appendChild(d);
+function buildDots(count) {
+  ui.dots.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.className = "dotStep";
+    ui.dots.appendChild(el);
   }
 }
 
 function setScenario(key) {
-  state.scenario = key;
+  state.scenarioKey = key;
   state.step = 0;
   state.running = false;
 
   const s = scenarios[key];
-  methodVal.textContent = s.method;
-  endpointVal.textContent = s.endpoint;
-  statusVal.textContent = "—";
-  explainText.textContent = "Tryck Nästa för att starta resan.";
+  ui.methodVal.textContent = s.method;
+  ui.endpointVal.textContent = s.endpoint;
+  ui.statusVal.textContent = "—";
+  ui.explainText.textContent = "Välj ett exempel och tryck Nästa.";
 
-  updateStepper();
+  ui.stepTotal.textContent = String(state.total);
+  ui.stepNow.textContent = "0";
+
   clearFocus();
-  stopAllPulses();
+  stopPulse();
+  updateDots();
+  ui.nextBtn.textContent = "Nästa";
 }
 
 function clearFocus() {
-  [nodeApp, nodeApi, nodeServer, nodeDb].forEach((n) => n.classList.remove("isFocus"));
+  [ui.nodeApp, ui.nodeApi, ui.nodeServer, ui.nodeDb].forEach((n) => n.classList.remove("isFocus"));
 }
-
-function focusNode(which) {
+function focus(which) {
   clearFocus();
-  const map = { app: nodeApp, api: nodeApi, server: nodeServer, db: nodeDb };
+  const map = { app: ui.nodeApp, api: ui.nodeApi, server: ui.nodeServer, db: ui.nodeDb };
   map[which]?.classList.add("isFocus");
 }
 
-function stopAllPulses() {
-  [pulseReq1, pulseReq2, pulseReq3, pulseRes1, pulseRes2].forEach((p) => {
-    p.classList.remove("run");
-    // force reflow-safe reset
-    p.style.animation = "none";
-    p.offsetHeight; // eslint-disable-line no-unused-expressions
-    p.style.animation = "";
-  });
-}
-
-function runPulse(name) {
-  stopAllPulses();
-  const map = {
-    req1: pulseReq1,
-    req2: pulseReq2,
-    req3: pulseReq3,
-    res1: pulseRes1,
-    res2: pulseRes2,
-  };
-  const p = map[name];
-  if (!p) return;
-  p.classList.add("run");
-}
-
-function updateStepper() {
-  stepTotal.textContent = String(state.totalSteps);
-  stepNow.textContent = String(state.step);
-
-  const dots = $$(".dot");
+function updateDots() {
+  const dots = $$(".dotStep");
   dots.forEach((d, i) => {
     d.classList.remove("active", "done");
     if (i < state.step - 1) d.classList.add("done");
@@ -164,58 +219,115 @@ function updateStepper() {
   });
 }
 
-function applyStep() {
-  const s = scenarios[state.scenario];
-  const idx = Math.max(0, Math.min(state.step - 1, s.story.length - 1));
-  const frame = s.story[idx];
+function stopPulse() {
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  state.rafId = null;
+  ui.pulseReq.style.opacity = "0";
+  ui.pulseRes.style.opacity = "0";
+  ui.pulseReq.setAttribute("cx", -20);
+  ui.pulseReq.setAttribute("cy", -20);
+  ui.pulseRes.setAttribute("cx", -20);
+  ui.pulseRes.setAttribute("cy", -20);
+}
 
-  focusNode(frame.focus);
-  statusVal.textContent = frame.status;
-  explainText.textContent = frame.text;
+function easeInOut(t) {
+  // smooth
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
 
-  if (frame.pulse) runPulse(frame.pulse);
-  else stopAllPulses();
+function animatePulse({ type, pathKey }, durationMs = 850) {
+  stopPulse();
+
+  const path = ui[pathKey];
+  if (!path) return;
+
+  const dot = type === "response" ? ui.pulseRes : ui.pulseReq;
+  dot.style.opacity = "1";
+
+  const len = path.getTotalLength();
+  const start = performance.now();
+
+  const tick = (now) => {
+    const tRaw = (now - start) / durationMs;
+    const t = Math.min(1, Math.max(0, tRaw));
+    const e = easeInOut(t);
+
+    const pt = path.getPointAtLength(e * len);
+    dot.setAttribute("cx", pt.x);
+    dot.setAttribute("cy", pt.y);
+
+    // fade out near end
+    if (t > 0.85) {
+      dot.style.opacity = String(1 - (t - 0.85) / 0.15);
+    }
+
+    if (t < 1) {
+      state.rafId = requestAnimationFrame(tick);
+    } else {
+      dot.style.opacity = "0";
+      state.rafId = null;
+    }
+  };
+
+  state.rafId = requestAnimationFrame(tick);
+}
+
+function applyFrame() {
+  const s = scenarios[state.scenarioKey];
+  const frame = s.frames[state.step - 1];
+
+  focus(frame.focus);
+  ui.statusVal.textContent = frame.status;
+  ui.explainText.textContent = frame.text;
+
+  if (frame.pulse) {
+    animatePulse({
+      type: frame.pulse.type,
+      pathKey: frame.pulse.path,
+    });
+  } else {
+    stopPulse();
+  }
 }
 
 async function next() {
   if (state.running) return;
   state.running = true;
 
-  const s = scenarios[state.scenario];
-
-  // step 0 -> step 1: start
-  if (state.step < state.totalSteps) {
-    state.step += 1;
-    updateStepper();
-    applyStep();
-
-    // small lock so animations feel clean
-    await new Promise((r) => setTimeout(r, 520));
-  }
-
-  // if finished, keep last state and unlock
-  if (state.step >= state.totalSteps) {
-    nextBtn.textContent = "Kör igen";
+  if (state.step >= state.total) {
+    // replay
+    reset();
     state.running = false;
     return;
   }
 
-  nextBtn.textContent = "Nästa";
+  state.step += 1;
+  ui.stepNow.textContent = String(state.step);
+  updateDots();
+  applyFrame();
+
+  // liten “debounce” så det känns stabilt på mobil
+  await new Promise((r) => setTimeout(r, 250));
   state.running = false;
+
+  if (state.step >= state.total) ui.nextBtn.textContent = "Kör igen";
 }
 
-function resetAll() {
+function reset() {
   state.step = 0;
-  state.running = false;
-  statusVal.textContent = "—";
-  explainText.textContent = "Välj scenario och tryck Nästa för att starta.";
-  nextBtn.textContent = "Nästa";
-  updateStepper();
+  ui.stepNow.textContent = "0";
+  ui.statusVal.textContent = "—";
+  ui.explainText.textContent = "Välj ett exempel och tryck Nästa.";
+  ui.nextBtn.textContent = "Nästa";
   clearFocus();
-  stopAllPulses();
+  stopPulse();
+  updateDots();
 }
 
-// Segmented scenario
+// Buttons + tabs
+ui.nextBtn.addEventListener("click", next);
+ui.resetBtn.addEventListener("click", reset);
+
 $$(".segBtn").forEach((btn) => {
   btn.addEventListener("click", () => {
     $$(".segBtn").forEach((b) => {
@@ -228,21 +340,9 @@ $$(".segBtn").forEach((btn) => {
   });
 });
 
-// Buttons
-nextBtn.addEventListener("click", () => {
-  // If finished, restart same scenario
-  if (state.step >= state.totalSteps) {
-    resetAll();
-    return;
-  }
-  next();
-});
-resetBtn.addEventListener("click", resetAll);
-
 // Init
 (function init() {
-  state.totalSteps = 8;
-  buildDots(state.totalSteps);
-  setScenario("get");
-  updateStepper();
+  state.total = 7;
+  buildDots(state.total);
+  setScenario("look");
 })();

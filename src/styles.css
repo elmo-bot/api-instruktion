@@ -2,16 +2,12 @@
   --bg0: #070a14;
   --bg1: #0b1330;
   --card: rgba(255, 255, 255, 0.06);
-  --card2: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.12);
   --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.68);
+  --muted: rgba(255, 255, 255, 0.70);
 
-  --accent: #7c5cff; /* request */
-  --accent2: #35d0ff; /* response */
-  --good: #4ade80;
-  --warn: #fbbf24;
-  --bad: #fb7185;
+  --req: #7c5cff;
+  --res: #35d0ff;
 
   --radius: 18px;
 }
@@ -20,12 +16,14 @@
 html, body { height: 100%; }
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
   color: var(--text);
-  background: radial-gradient(1200px 800px at 20% 10%, rgba(124, 92, 255, 0.18), transparent 55%),
-              radial-gradient(900px 700px at 90% 25%, rgba(53, 208, 255, 0.13), transparent 60%),
-              linear-gradient(180deg, var(--bg1), var(--bg0));
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(124, 92, 255, 0.18), transparent 55%),
+    radial-gradient(900px 700px at 90% 25%, rgba(53, 208, 255, 0.13), transparent 60%),
+    linear-gradient(180deg, var(--bg1), var(--bg0));
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bg {
@@ -35,16 +33,14 @@ body {
   background:
     radial-gradient(600px 380px at 30% 40%, rgba(124, 92, 255, 0.12), transparent 65%),
     radial-gradient(520px 360px at 70% 55%, rgba(53, 208, 255, 0.10), transparent 70%);
-  filter: blur(0px);
-  opacity: 0.9;
 }
 
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
   backdrop-filter: blur(10px);
-  background: rgba(8, 10, 18, 0.55);
+  background: rgba(8, 10, 18, 0.60);
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -64,10 +60,12 @@ body {
   border-radius: 10px;
 }
 
-.brandTitle { font-weight: 800; letter-spacing: 0.2px; }
+.brandTitle { font-weight: 900; }
 .brandSub { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
 .wrap {
+  position: relative;
+  z-index: 1; /* viktigt så inget “overlay” äter klick */
   max-width: 1100px;
   margin: 0 auto;
   padding: 18px 16px 44px;
@@ -89,61 +87,63 @@ body {
 
 .muted { color: var(--muted); line-height: 1.5; margin: 0 0 16px; }
 
-.panel {
+.layout {
   display: grid;
   gap: 14px;
-}
-
-.controls {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: 1fr;
 }
 
 @media (min-width: 980px) {
-  .panel { grid-template-columns: 420px 1fr; align-items: start; }
-  .controls { position: sticky; top: 78px; }
+  .layout { grid-template-columns: 420px 1fr; align-items: start; }
+  .left { position: sticky; top: 78px; }
 }
 
-.controlCard, .explainCard, .vizCard {
+.card {
   border-radius: var(--radius);
   background: var(--card);
   border: 1px solid rgba(255,255,255,0.10);
   box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+  padding: 14px;
 }
 
-.controlCard { padding: 14px; }
-.explainCard { padding: 14px; background: rgba(255,255,255,0.05); }
-
-.label { font-size: 12px; color: var(--muted); }
-.controlRow { display: grid; gap: 10px; }
+.label { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
 
 .segmented {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 8px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .segBtn {
-  appearance: none;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.03);
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
   color: var(--text);
-  padding: 10px 8px;
-  border-radius: 14px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  padding: 12px 12px;
+  border-radius: 16px;
+  font-weight: 900;
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform .08s ease, background .2s ease, border-color .2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
 }
-.segBtn:active { transform: scale(0.98); }
+.segBtn:active { transform: scale(0.99); }
 .segBtn.isActive {
-  background: rgba(124, 92, 255, 0.18);
+  background: rgba(124, 92, 255, 0.16);
   border-color: rgba(124, 92, 255, 0.45);
+}
+
+.tech {
+  font-weight: 900;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.78);
 }
 
 .kv {
@@ -162,7 +162,7 @@ body {
 }
 .kvRow:last-child { border-bottom: none; }
 .kvKey { color: var(--muted); font-size: 13px; }
-.kvVal { font-weight: 800; }
+.kvVal { font-weight: 900; }
 
 .stepper {
   margin-top: 12px;
@@ -176,26 +176,18 @@ body {
   gap: 12px;
 }
 
-.stepDots {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-}
-.dot {
+.dots { display: flex; gap: 7px; align-items: center; }
+.dotStep {
   width: 10px;
   height: 10px;
   border-radius: 999px;
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.10);
 }
-.dot.active { background: rgba(124, 92, 255, 0.95); border-color: rgba(124, 92, 255, 0.65); }
-.dot.done { background: rgba(53, 208, 255, 0.95); border-color: rgba(53, 208, 255, 0.65); }
+.dotStep.active { background: rgba(124, 92, 255, 0.95); border-color: rgba(124, 92, 255, 0.65); }
+.dotStep.done { background: rgba(53, 208, 255, 0.95); border-color: rgba(53, 208, 255, 0.65); }
 
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
+.actions { display: flex; gap: 10px; margin-top: 12px; }
 
 .btn {
   flex: 1;
@@ -204,34 +196,31 @@ body {
   color: var(--text);
   padding: 12px 12px;
   border-radius: 16px;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
-  transition: transform .08s ease, background .2s ease, border-color .2s ease;
+  touch-action: manipulation;
 }
-.btn:hover { background: rgba(255,255,255,0.12); }
-.btn:active { transform: scale(0.99); }
 .btn.secondary { background: rgba(0,0,0,0.18); }
 
-.explainTitle { font-weight: 900; margin-bottom: 8px; }
-.explainBody { color: var(--muted); line-height: 1.55; }
+.infoTitle { font-weight: 900; margin-bottom: 8px; }
+.infoBody { color: var(--muted); line-height: 1.55; }
 
-.miniLegend {
+.legend {
   margin-top: 10px;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  color: rgba(255,255,255,0.70);
+  color: rgba(255,255,255,0.72);
   font-size: 13px;
 }
-.legendDot {
+.legend .dot {
   width: 10px; height: 10px; border-radius: 999px; display: inline-block;
   margin-right: 6px; vertical-align: -1px;
 }
-.legendDot.request { background: rgba(124, 92, 255, 0.95); }
-.legendDot.response { background: rgba(53, 208, 255, 0.95); }
+.legend .dot.request { background: var(--req); }
+.legend .dot.response { background: var(--res); }
 
 .vizCard { padding: 14px; }
-.vizHeader { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .vizTitle { font-weight: 900; }
 .vizSub { color: var(--muted); font-size: 13px; }
 
@@ -260,11 +249,11 @@ body {
   transition: transform .18s ease, border-color .25s ease, background .25s ease;
 }
 .nodeTitle { font-weight: 900; font-size: 18px; }
-.nodeSub { color: var(--muted); margin-top: 2px; font-weight: 600; }
+.nodeSub { color: var(--muted); margin-top: 2px; font-weight: 700; }
 
 .node.isFocus {
   background: rgba(124, 92, 255, 0.10);
-  border-color: rgba(124, 92, 255, 0.40);
+  border-color: rgba(124, 92, 255, 0.45);
   transform: translateY(-1px);
 }
 
@@ -278,6 +267,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none; /* <-- viktigt: SVG ska aldrig blocka klick */
 }
 
 .wire {
@@ -289,39 +279,15 @@ body {
   opacity: 0.55;
 }
 
-.pulse {
-  fill: none;
-  stroke-width: 10;
-  stroke-linecap: round;
+.pulseDot {
   opacity: 0;
   filter: url(#glow);
-  stroke-dasharray: 18 900;
-  stroke-dashoffset: 0;
 }
-
-.pulse.request { stroke: rgba(124, 92, 255, 0.95); }
-.pulse.response { stroke: rgba(53, 208, 255, 0.95); }
-
-.pulse.run {
-  opacity: 1;
-  animation: dash 950ms ease-in-out 1;
-}
-
-@keyframes dash {
-  from { stroke-dashoffset: 900; opacity: 0.0; }
-  20% { opacity: 1; }
-  to { stroke-dashoffset: 0; opacity: 0.0; }
-}
+.pulseDot.request { fill: var(--req); }
+.pulseDot.response { fill: var(--res); }
 
 .footer {
   margin-top: 14px;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.60);
   font-size: 13px;
-}
-
-.footNote {
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
 }

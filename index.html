@@ -46,7 +46,7 @@
 
       <div class="scene" aria-label="Scen">
         <div class="stage" id="stage">
-          <!-- Puls-layer -->
+          <!-- Puls-layer (viktigt: pointer-events:none i CSS) -->
           <svg class="pulseLayer" id="pulseLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <filter id="glow">
@@ -58,13 +58,13 @@
               </filter>
             </defs>
 
-            <!-- Baslinjer (svagt) -->
+            <!-- Baslinjer -->
             <path class="wire" d="M18 40 C33 40 40 50 50 50" />
             <path class="wire" d="M50 50 C60 50 67 40 82 40" />
             <path class="wire" d="M82 40 C86 52 86 66 78 78" />
             <path class="wire" d="M78 78 C64 84 60 76 52 66" />
 
-            <!-- Geometri (osynlig, används för pulser) -->
+            <!-- Geometri -->
             <path class="geom" id="g-app-api"     d="M18 40 C33 40 40 50 50 50" />
             <path class="geom" id="g-api-server"  d="M50 50 C60 50 67 40 82 40" />
             <path class="geom" id="g-server-db"   d="M82 40 C86 52 86 66 78 78" />
@@ -73,7 +73,7 @@
             <path class="geom" id="g-api-app"     d="M50 50 C40 50 33 40 18 40" />
           </svg>
 
-          <!-- Noder -->
+          <!-- Noder (inte klickbara – styrs av Nästa/Föregående) -->
           <div class="node appNode" id="n-app">
             <div class="nodeTitle">App</div>
             <div class="nodeSub">Gäst + Meny</div>
@@ -94,7 +94,7 @@
             <div class="nodeSub">Data</div>
           </div>
 
-          <!-- Response card (visas i slutet) -->
+          <!-- Response card -->
           <div class="response" id="response" aria-hidden="true">
             <div class="respDot"></div>
             <div>

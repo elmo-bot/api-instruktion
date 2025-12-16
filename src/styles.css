@@ -7,10 +7,6 @@
   --stroke: rgba(255,255,255,.10);
   --stroke2: rgba(255,255,255,.16);
 
-  --a:#7C5CFF;
-  --y:#FFCC66;
-  --g:#38D17A;
-
   --shadow: 0 18px 70px rgba(0,0,0,.48);
   --shadow2: 0 10px 34px rgba(0,0,0,.36);
   --radius: 26px;
@@ -19,6 +15,10 @@
 
 *{box-sizing:border-box}
 html,body{height:100%}
+
+/* Viktigt för iOS touch */
+button, select { touch-action: manipulation; }
+
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -41,9 +41,15 @@ body{
   background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
   box-shadow: var(--shadow);
   overflow:hidden;
+
+  /* ✅ gör en egen stacking context så z-index beter sig stabilt på iOS */
+  position: relative;
+  isolation: isolate;
 }
 
 .top{
+  position: relative;
+  z-index: 50; /* ✅ alltid klickbart ovanpå allt */
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -51,7 +57,8 @@ body{
   padding: 14px;
   border-bottom: 1px solid rgba(255,255,255,.06);
   background: rgba(7,10,20,.35);
-  backdrop-filter: blur(10px);
+  /* backdrop-filter kan stöka på iOS med hit-testing, så vi tonar ner: */
+  /* backdrop-filter: blur(10px); */
 }
 
 .brand{
@@ -66,6 +73,8 @@ body{
 .brand img{ height:20px; width:auto; display:block; opacity:.95; }
 
 .controls{
+  position: relative;
+  z-index: 60;
   display:flex;
   align-items:center;
   gap:10px;
@@ -100,9 +109,10 @@ body{
   border-color: rgba(124,92,255,.32);
   background: linear-gradient(180deg, rgba(124,92,255,.92), rgba(124,92,255,.70));
 }
-.btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
 
 .hero{
+  position: relative;
+  z-index: 10;
   display:grid;
   grid-template-columns: 1fr 1.2fr;
   gap: 14px;
@@ -110,6 +120,8 @@ body{
 }
 
 .copy{
+  position: relative;
+  z-index: 20;
   padding: 14px;
   border-radius: 22px;
   border: 1px solid rgba(255,255,255,.08);
@@ -134,7 +146,6 @@ h1{
   letter-spacing: -0.4px;
   line-height: 1.12;
 }
-
 p{
   margin: 8px 0 0;
   color: var(--muted);
@@ -171,6 +182,8 @@ p{
 .stepText{ margin-top: 10px; color: rgba(245,247,255,.62); font-weight: 850; font-size: 12px; }
 
 .scene{
+  position: relative;
+  z-index: 20;
   padding: 14px;
   border-radius: 22px;
   border: 1px solid rgba(255,255,255,.08);
@@ -188,13 +201,17 @@ p{
   min-height: 360px;
 }
 
-/* ✅ VIKTIG FIX: SVG får aldrig fånga touch */
+/* ✅ SUPER-VIKTIG: dekor får aldrig fånga touch/click */
+.pulseLayer,
+.pulseLayer *{
+  pointer-events:none !important;
+}
+
 .pulseLayer{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
-  pointer-events:none; /* 🔥 */
   z-index:1;
 }
 
@@ -206,7 +223,6 @@ p{
   stroke-dasharray: 2.5 3.5;
   opacity:.9;
 }
-
 .geom{ fill:none; stroke: transparent; stroke-width: 2; }
 
 .node{
@@ -216,15 +232,15 @@ p{
   border: 1px solid var(--stroke2);
   background: rgba(16,24,52,.52);
   box-shadow: var(--shadow2);
-  backdrop-filter: blur(12px);
-  z-index:3;              /* ✅ ovanför SVG */
-  pointer-events: none;   /* nodernas klick är av – styrs av knappar */
-  transition: transform .28s var(--ease), border-color .22s ease, filter .22s ease, opacity .22s ease;
+  /* tar bort backdrop-filter pga iOS hit-testing-problem */
+  /* backdrop-filter: blur(12px); */
+  z-index:3;
+  pointer-events:none;
+  transition: transform .28s var(--ease), border-color .22s ease, opacity .22s ease;
   opacity: .92;
 }
 .nodeTitle{ font-weight: 980; font-size: 15px; letter-spacing:-.2px; }
 .nodeSub{ margin-top:6px; color: var(--muted); font-weight: 850; font-size: 12px; }
-
 .node.active{
   border-color: rgba(124,92,255,.55);
   transform: translateY(-1px);
@@ -245,20 +261,13 @@ p{
   border: 1px solid rgba(255,255,255,.12);
   background: rgba(10,16,36,.72);
   box-shadow: var(--shadow2);
-  backdrop-filter: blur(10px);
-  display:flex;
-  align-items:center;
-  gap:10px;
   z-index:4;
   pointer-events:none;
   opacity:0;
   transform: translateY(10px);
   transition: opacity .35s ease, transform .35s var(--ease);
 }
-.response.show{
-  opacity:1;
-  transform: translateY(0);
-}
+.response.show{ opacity:1; transform: translateY(0); }
 .respDot{
   width: 10px; height: 10px;
   border-radius: 999px;
@@ -278,13 +287,13 @@ p{
   font-size: 12px;
 }
 
-/* ✅ Mobil: undvik klippning/”bara en nod syns” */
+/* Mobil: stabil höjd + allt syns */
 @media (max-width: 860px){
   .hero{ grid-template-columns: 1fr; }
   .stage{
-    aspect-ratio: auto;   /* 🔥 bort lås */
+    aspect-ratio: auto;
     min-height: 420px;
-    height: 70vh;         /* passar skärm */
+    height: 70vh;
   }
   .appNode{ left: 12px; top: 18px; width: 72%; }
   .serverNode{ right: 12px; top: 18px; width: 72%; }
